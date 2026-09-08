@@ -18,13 +18,21 @@ const app = express();
 
 // Middlewares
 const allowedOrigins = process.env.FRONTEND_URL
-  ? [process.env.FRONTEND_URL, 'http://localhost:5173', 'http://127.0.0.1:5173']
-  : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+  ? [
+      process.env.FRONTEND_URL,
+      'http://localhost:5173',
+      'http://127.0.0.1:5173'
+    ]
+  : [
+      'http://localhost:5173',
+      'http://127.0.0.1:5173'
+    ];
 
 app.use(cors({
   origin: allowedOrigins,
   credentials: true
 }));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -49,14 +57,22 @@ app.use((req, res, next) => {
 // Central Error Handler
 app.use(errorHandler);
 
-// Serve static frontend dist in production if dist directory exists
+// Serve static frontend dist in production
 import path from 'path';
 import fs from 'fs';
-const distPath = path.resolve(process.cwd(), 'dist');
+
+// Frontend dist is located at /app/dist.
+// Backend runs from /app/backend, so move one directory up.
+const distPath = path.resolve(process.cwd(), '..', 'dist');
+
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
+
   app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) return next();
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
