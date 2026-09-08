@@ -6,12 +6,13 @@ import {
   Calendar, 
   Image, 
   Bell, 
-  LifeBuoy, 
-  Mic, 
+  HelpCircle,
   Settings as SettingsIcon,
   Menu,
   X,
-  LogOut
+  LogOut,
+  Mic,
+  UserPlus
 } from 'lucide-react';
 import { SVGBrain } from '../SVGIcons';
 import { useLanguage } from '../../context/LanguageContext';
@@ -40,16 +41,16 @@ export const Layout: React.FC<LayoutProps> = ({ children, textSize, highContrast
   const isCaregiver = currentUser?.role === 'Caregiver';
 
   const navItems = isCaregiver ? [
-    { to: '/caregiver', label: t('nav.caregiver') || 'Caregiver Dashboard', icon: Home },
-    { to: '/memories', label: t('nav.memories'), icon: Image },
-    { to: '/settings', label: t('nav.settings'), icon: SettingsIcon }
+    { to: '/caregiver', label: t('nav.caregiver') || 'Dashboard', icon: Home },
+    { to: '/caregiver?action=add-patient', label: t('addPatient') || 'Add Patient', icon: UserPlus, isAddPatient: true },
   ] : [
     { to: '/', label: t('nav.home'), icon: Home },
     { to: '/games', label: t('nav.brainGames'), icon: Brain },
     { to: '/day', label: t('nav.myDay'), icon: Calendar },
-    { to: '/memories', label: t('nav.memories'), icon: Image },
     { to: '/reminders', label: t('nav.reminders'), icon: Bell },
-    { to: '/help', label: t('nav.help'), icon: LifeBuoy },
+    { to: '/memories', label: t('nav.memories'), icon: Image },
+    { to: '/help', label: t('nav.help') || 'Help', icon: HelpCircle },
+    { to: '/talk-to-me', label: t('nav.talkToMe') || 'Talk to Me', icon: Mic, isHighlighted: true },
   ];
 
   const getScaleClass = () => {
@@ -96,14 +97,25 @@ export const Layout: React.FC<LayoutProps> = ({ children, textSize, highContrast
   };
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full overflow-y-auto scrollbar-thin bg-brand-purpleLight border-r border-brand-purple/20 p-6 text-brand-navy transition-all duration-500">
+    <div className={`flex flex-col h-full overflow-y-auto scrollbar-thin p-6 transition-all duration-500 ${
+      isCaregiver 
+        ? 'bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 border-r border-indigo-800/40 text-white' 
+        : 'bg-brand-purpleLight border-r border-brand-purple/20 text-brand-navy'
+    }`}>
       {/* Brand Header & Mobile Close Button */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setMobileMenuOpen(false); navigate('/'); }}>
-          <SVGBrain className="w-10 h-10 text-brand-purple" />
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setMobileMenuOpen(false); navigate(isCaregiver ? '/caregiver' : '/'); }}>
+          <SVGBrain className={`w-10 h-10 ${isCaregiver ? 'text-cyan-400' : 'text-brand-purple'}`} />
           <div>
-            <h2 className="font-bold text-xl text-brand-navy tracking-tight">{t('brand.title') || 'Second Brain'}</h2>
-            <p className="text-xs text-brand-grayText">{t('brand.subtitle') || 'Your memory companion'}</p>
+            <div className="flex items-center gap-2">
+              <h2 className={`font-bold text-xl tracking-tight ${isCaregiver ? 'text-white' : 'text-brand-navy'}`}>{t('brand.title') || 'Second Brain'}</h2>
+              {isCaregiver && (
+                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  Care
+                </span>
+              )}
+            </div>
+            <p className={`text-xs ${isCaregiver ? 'text-slate-300 font-medium' : 'text-brand-grayText'}`}>{t('brand.subtitle') || 'Your memory companion'}</p>
           </div>
         </div>
         {/* Close Button */}
@@ -112,7 +124,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, textSize, highContrast
             setMobileMenuOpen(false);
             setSidebarExpanded(false);
           }} 
-          className="p-1.5 rounded-lg hover:bg-brand-purple/20 text-brand-grayText"
+          className={`p-1.5 rounded-lg ${isCaregiver ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-brand-purple/20 text-brand-grayText'}`}
           aria-label="Close navigation menu"
         >
           <X className="w-6 h-6" />
@@ -120,100 +132,148 @@ export const Layout: React.FC<LayoutProps> = ({ children, textSize, highContrast
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-2">
+      <nav className="flex-1 space-y-2.5 mt-2">
         {navItems.map((item) => {
           const Icon = item.icon;
+          const isTalkToMe = item.to === '/talk-to-me';
+          const isAddPatient = (item as any).isAddPatient;
+
+          if (isAddPatient) {
+            return (
+              <button
+                key={item.to}
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate('/caregiver?action=add-patient');
+                  window.dispatchEvent(new CustomEvent('open-add-patient-modal'));
+                }}
+                className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold transition-all duration-300 text-slate-300 hover:bg-white/10 hover:text-white cursor-pointer text-left"
+              >
+                <Icon className="w-6 h-6 stroke-[2.5] text-sky-400" />
+                <span className="text-base font-extrabold">{item.label}</span>
+              </button>
+            );
+          }
+
+          if (isTalkToMe) {
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={() => setMobileMenuOpen(false)}
+                className={({ isActive }) => `
+                  mt-4 flex items-center gap-3.5 p-3.5 rounded-2xl font-black text-sm transition-all duration-300 shadow-sm border-2 cursor-pointer
+                  ${isActive
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-300 shadow-amber-500/30 scale-[1.02]'
+                    : 'bg-amber-100/90 hover:bg-amber-200/90 text-amber-950 border-amber-300/80 hover:border-amber-400 shadow-amber-500/10'}
+                `}
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-xs border border-amber-200 flex-shrink-0">
+                  <Mic className="w-5 h-5 stroke-[2.5]" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-base font-extrabold leading-tight truncate">{item.label}</span>
+                  <span className="text-[11px] font-bold text-amber-900/70 truncate">Tap here to talk</span>
+                </div>
+              </NavLink>
+            );
+          }
+
           return (
             <NavLink
               key={item.to}
               to={item.to}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) => `
-                flex items-center gap-4 px-4 py-3.5 rounded-xl font-bold transition-all duration-300
-                ${isActive 
-                  ? 'bg-brand-purple text-white shadow-md' 
-                  : 'text-brand-grayText hover:bg-brand-purple/10 hover:text-brand-navy'}
+                flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold transition-all duration-300
+                ${isCaregiver
+                  ? (isActive 
+                      ? 'bg-gradient-to-r from-brand-purple to-indigo-600 text-white shadow-lg shadow-brand-purple/30 border border-purple-400/30' 
+                      : 'text-slate-300 hover:bg-white/10 hover:text-white')
+                  : (isActive 
+                      ? 'bg-brand-purple text-white shadow-md' 
+                      : 'text-brand-grayText hover:bg-brand-purple/10 hover:text-brand-navy')
+                }
               `}
             >
               <Icon className="w-6 h-6 stroke-[2.5]" />
-              <span className="text-base">{item.label}</span>
+              <span className="text-base font-extrabold">{item.label}</span>
             </NavLink>
           );
         })}
       </nav>
 
-      {/* Talk To Me Action Button */}
-      {!isCaregiver && (
-        <div className="mt-auto pt-4">
-          <button
-            onClick={() => {
-              setMobileMenuOpen(false);
-              navigate('/talk-to-me');
-            }}
-            className="w-full bg-brand-blue text-white hover:bg-opacity-95 active:scale-[0.98] py-4 px-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-md"
-          >
-            <Mic className="w-6 h-6" />
-            <span>{t('nav.talkToMe')}</span>
-          </button>
-        </div>
-      )}
 
       {/* Profile / Settings / Logout link */}
-      <div className="mt-6 flex flex-col gap-2 border-t border-brand-purple/20 pt-4">
+      <div className={`mt-6 flex flex-col gap-2 border-t pt-4 ${isCaregiver ? 'border-indigo-800/40' : 'border-brand-purple/20'}`}>
         <div 
           onClick={() => {
             setMobileMenuOpen(false);
             navigate('/settings');
           }}
-            className="flex items-center gap-3 p-2 rounded-xl hover:bg-brand-purple/15 cursor-pointer transition-colors"
-          >
-            <div className="w-10 h-10 rounded-full bg-brand-purple flex items-center justify-center text-white font-bold">
-              {userInitial}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-sm text-brand-navy truncate">{userName}</h4>
-              <p className="text-xs text-brand-grayText truncate">{userSub}</p>
-            </div>
-            <SettingsIcon className="w-5 h-5 text-brand-grayText hover:text-brand-purple transition-colors" />
+          className={`flex items-center gap-3 p-2.5 rounded-2xl cursor-pointer transition-all ${
+            isCaregiver 
+              ? 'hover:bg-white/10 text-white' 
+              : 'hover:bg-brand-purple/15 text-brand-navy'
+          }`}
+          title={isCaregiver ? 'Caregiver Profile & Settings' : 'Settings'}
+        >
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-black shadow-xs flex-shrink-0 ${
+            isCaregiver ? 'bg-gradient-to-br from-sky-500 to-indigo-600 border border-sky-300/40' : 'bg-brand-purple'
+          }`}>
+            {userInitial}
           </div>
-
-          {onLogout && (
-            <button
-              onClick={() => {
-                if (window.confirm(t('logout.confirm') || 'Do you want to log out?')) {
-                  setMobileMenuOpen(false);
-                  onLogout();
-                }
-              }}
-              className="flex items-center gap-3 px-3 py-2 text-xs font-bold text-brand-red hover:bg-brand-redBg/30 rounded-xl transition-all w-full text-left"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>{t('logout.label') || 'Log Out'}</span>
-            </button>
-          )}
+          <div className="flex-1 min-w-0">
+            <h4 className={`font-extrabold text-sm truncate ${isCaregiver ? 'text-white' : 'text-brand-navy'}`}>{userName}</h4>
+            <p className={`text-xs truncate ${isCaregiver ? 'text-slate-300 font-medium' : 'text-brand-grayText'}`}>{userSub}</p>
+          </div>
+          <SettingsIcon className={`w-5 h-5 flex-shrink-0 transition-colors ${isCaregiver ? 'text-slate-400 hover:text-white' : 'text-brand-grayText hover:text-brand-purple'}`} />
         </div>
+
+        {onLogout && (
+          <button
+            onClick={() => {
+              if (window.confirm(t('logout.confirm') || 'Do you want to log out?')) {
+                setMobileMenuOpen(false);
+                onLogout();
+              }
+            }}
+            className={`flex items-center gap-3 px-3.5 py-2.5 text-xs font-extrabold rounded-xl transition-all w-full text-left cursor-pointer ${
+              isCaregiver ? 'text-rose-400 hover:bg-rose-500/20' : 'text-brand-red hover:bg-brand-redBg/30'
+            }`}
+          >
+            <LogOut className="w-4 h-4 flex-shrink-0" />
+            <span>{t('logout.label') || 'Log Out'}</span>
+          </button>
+        )}
+      </div>
       </div>
   );
 
   return (
-    <div className={`h-screen overflow-hidden flex flex-col lg:flex-row bg-brand-lavender ${getScaleClass()} ${highContrast ? 'high-contrast-mode' : ''} transition-all duration-700`}>
+    <div className={`h-screen overflow-hidden flex flex-col lg:flex-row ${isCaregiver ? 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900' : 'bg-brand-lavender'} ${getScaleClass()} ${highContrast ? 'high-contrast-mode' : ''} transition-all duration-700`}>
       {/* Mobile/Tablet Top Header */}
-      <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-white border-b border-brand-purple/15 sticky top-0 z-40">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-          <SVGBrain className="w-8 h-8 text-brand-purple" />
-          <h1 className="font-bold text-lg text-brand-navy">{t('brand.title') || 'Second Brain'}</h1>
+      <header className={`lg:hidden flex items-center justify-between px-6 py-4 border-b sticky top-0 z-40 ${
+        isCaregiver 
+          ? 'bg-slate-900 border-slate-800 text-white' 
+          : 'bg-white border-brand-purple/15 text-brand-navy'
+      }`}>
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate(isCaregiver ? '/caregiver' : '/')}>
+          <SVGBrain className={`w-8 h-8 ${isCaregiver ? 'text-cyan-400' : 'text-brand-purple'}`} />
+          <h1 className="font-bold text-lg">{t('brand.title') || 'Second Brain'}</h1>
         </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={() => navigate('/settings')} 
-            className="p-2 text-brand-grayText hover:text-brand-purple transition-colors"
+            className={`p-2 transition-colors ${isCaregiver ? 'text-slate-300 hover:text-white' : 'text-brand-grayText hover:text-brand-purple'}`}
             aria-label="Settings"
           >
             <SettingsIcon className="w-6 h-6" />
           </button>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-brand-navy focus:outline-none"
+            className={`p-2 focus:outline-none ${isCaregiver ? 'text-white' : 'text-brand-navy'}`}
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
@@ -225,7 +285,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, textSize, highContrast
       {!sidebarExpanded && (
         <button
           onClick={() => setSidebarExpanded(true)}
-          className="hidden lg:flex fixed top-6 left-6 z-50 p-3 bg-white border border-brand-purple/20 hover:bg-brand-purpleLight rounded-2xl shadow-md text-brand-purple transition-all active:scale-[0.98]"
+          className={`hidden lg:flex fixed top-6 left-6 z-50 p-3 border rounded-2xl shadow-md transition-all active:scale-[0.98] ${
+            isCaregiver 
+              ? 'bg-slate-900 border-slate-800 hover:bg-slate-800 text-cyan-400' 
+              : 'bg-white border-brand-purple/20 hover:bg-brand-purpleLight text-brand-purple'
+          }`}
           aria-label="Open navigation menu"
         >
           <Menu className="w-7 h-7" />
@@ -250,25 +314,32 @@ export const Layout: React.FC<LayoutProps> = ({ children, textSize, highContrast
       )}
 
       {/* Main Content Area */}
-      <main className={`flex-1 flex flex-col min-w-0 h-full overflow-y-auto ${getEnvBgClass()} relative transition-all duration-700`}>
-        {/* Soft Ambient Environment Details */}
-        <div className="absolute inset-0 pointer-events-none opacity-20 overflow-hidden">
-          {/* Waves background */}
-          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-brand-purple/20 to-transparent animate-pulse" />
-          {/* Floating leaf element */}
-          <div className="absolute top-10 right-10 text-brand-green opacity-45 transform rotate-12 transition-all duration-[8000ms] hover:rotate-45">🌿</div>
-          <div className="absolute bottom-16 right-20 text-brand-purple opacity-30">🌸</div>
-          {timePeriod === 'night' && (
-            <>
-              <div className="absolute top-12 left-12 text-yellow-100 opacity-60">🌙</div>
-              <div className="absolute top-24 right-32 text-white w-1 h-1 bg-white rounded-full animate-ping" />
-            </>
-          )}
-        </div>
+      <main className={`flex-1 flex flex-col min-w-0 h-full overflow-y-auto ${
+        isCaregiver 
+          ? 'bg-gradient-to-br from-slate-900 via-indigo-950/80 to-slate-900' 
+          : getEnvBgClass()
+      } relative transition-all duration-700`}>
+        {/* Soft Ambient Environment Details (Patient Only) */}
+        {!isCaregiver && (
+          <div className="absolute inset-0 pointer-events-none opacity-20 overflow-hidden">
+            {/* Waves background */}
+            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-brand-purple/20 to-transparent animate-pulse" />
+            {/* Floating leaf element */}
+            <div className="absolute top-10 right-10 text-brand-green opacity-45 transform rotate-12 transition-all duration-[8000ms] hover:rotate-45">🌿</div>
+            <div className="absolute bottom-16 right-20 text-brand-purple opacity-30">🌸</div>
+            {timePeriod === 'night' && (
+              <>
+                <div className="absolute top-12 left-12 text-yellow-100 opacity-60">🌙</div>
+                <div className="absolute top-24 right-32 text-white w-1 h-1 bg-white rounded-full animate-ping" />
+              </>
+            )}
+          </div>
+        )}
         <div className={`flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto pb-24 relative z-10 ${!sidebarExpanded ? 'lg:pl-20' : ''}`}>
           {children}
         </div>
       </main>
     </div>
+
   );
 };

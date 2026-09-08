@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Bell, Trash2, CheckCircle2, Clock, X, ToggleLeft, ToggleRight, Sparkles } from 'lucide-react';
+import { Plus, Bell, Trash2, CheckCircle2, Clock, X, ToggleLeft, ToggleRight, Sparkles, Pill, Droplets, Utensils, Footprints, Calendar, Phone, ShieldCheck } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import type { Reminder } from '../data/demoData';
 import { useLanguage } from '../context/LanguageContext';
 import { getISODateString } from '../utils/dateUtils';
 import { getLocalizedReminder, generateTranslations } from '../services/translationService';
+import { TimeSelector12h, parseTimeTo12h } from '../components/TimeSelector12h';
 
 const remTranslations: Record<string, Record<string, string>> = {
   English: {
@@ -576,114 +577,176 @@ export const Reminders: React.FC = () => {
             <p className="text-brand-grayText mt-2">{(remTranslations[language] || remTranslations.English).noRemindersDesc}</p>
           </div>
         ) : (
-          <div className="divide-y divide-brand-purpleLight">
-            {reminders.map((reminder) => (
-              <div 
-                key={reminder.id}
-                className={`py-5 flex flex-col md:flex-row md:items-center justify-between gap-4 first:pt-0 last:pb-0 ${
-                  !reminder.enabled ? 'opacity-50' : ''
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  {/* Category icon */}
-                  <div className={`p-4 rounded-2xl flex-shrink-0 ${
-                    reminder.status === 'Completed'
-                      ? 'bg-brand-greenBg text-brand-green'
-                      : 'bg-brand-purpleLight text-brand-purple'
-                  }`}>
-                    <span className="text-3xl block">
-                      {reminder.category === 'medicine' ? '💊' :
-                       reminder.category === 'hydration' ? '💧' :
-                       reminder.category === 'meals' ? '🍱' :
-                       reminder.category === 'exercise' ? '🚶' :
-                       reminder.category === 'appointments' ? '📅' :
-                       reminder.category === 'family' ? '🏠' : '🔔'}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-extrabold text-xl text-brand-navy">{getLocalizedReminder(reminder, language).title}</h3>
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${
-                        reminder.status === 'Completed'
-                          ? 'bg-brand-greenBg text-brand-green'
-                          : 'bg-brand-orangeBg text-brand-orange'
-                      }`}>
-                        {reminder.status === 'Completed' ? (remTranslations[language] || remTranslations.English).statusCompleted : reminder.status === 'Missed' ? (remTranslations[language] || remTranslations.English).statusMissed : (remTranslations[language] || remTranslations.English).statusUpcoming}
-                      </span>
+          <div className="space-y-4">
+            {reminders.map((reminder) => {
+              const localizedRem = getLocalizedReminder(reminder, language);
+              const getCategoryStyle = (cat: Reminder['category']) => {
+                switch (cat) {
+                  case 'hydration':
+                    return {
+                      bg: 'bg-cyan-50 border-cyan-200 text-cyan-700',
+                      iconBg: 'bg-cyan-100 text-cyan-600',
+                      Icon: Droplets,
+                      label: 'Hydration'
+                    };
+                  case 'exercise':
+                    return {
+                      bg: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+                      iconBg: 'bg-emerald-100 text-emerald-600',
+                      Icon: Footprints,
+                      label: 'Exercise'
+                    };
+                  case 'medicine':
+                    return {
+                      bg: 'bg-purple-50 border-purple-200 text-purple-700',
+                      iconBg: 'bg-purple-100 text-purple-600',
+                      Icon: Pill,
+                      label: 'Medicine'
+                    };
+                  case 'meals':
+                    return {
+                      bg: 'bg-amber-50 border-amber-200 text-amber-700',
+                      iconBg: 'bg-amber-100 text-amber-600',
+                      Icon: Utensils,
+                      label: 'Meals'
+                    };
+                  case 'family':
+                    return {
+                      bg: 'bg-indigo-50 border-indigo-200 text-indigo-700',
+                      iconBg: 'bg-indigo-100 text-indigo-600',
+                      Icon: Phone,
+                      label: 'Family'
+                    };
+                  case 'appointments':
+                    return {
+                      bg: 'bg-teal-50 border-teal-200 text-teal-700',
+                      iconBg: 'bg-teal-100 text-teal-600',
+                      Icon: Calendar,
+                      label: 'Appointment'
+                    };
+                  default:
+                    return {
+                      bg: 'bg-slate-50 border-slate-200 text-slate-700',
+                      iconBg: 'bg-slate-100 text-slate-600',
+                      Icon: Bell,
+                      label: 'Reminder'
+                    };
+                }
+              };
+
+              const catStyle = getCategoryStyle(reminder.category);
+              const CategoryIcon = catStyle.Icon;
+
+              return (
+                <div 
+                  key={reminder.id}
+                  className={`p-5 rounded-2xl border border-[#E6E0D4] bg-gradient-to-br from-[#FAF8F5] via-[#F6F2EC] to-[#EFEAE2] transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs hover:shadow-md ${
+                    !reminder.enabled ? 'opacity-50' : ''
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    {/* Category Icon Badge */}
+                    <div className={`p-4 rounded-2xl flex-shrink-0 shadow-xs flex items-center justify-center ${catStyle.iconBg}`}>
+                      <CategoryIcon className="w-8 h-8" />
                     </div>
-                    <p className="text-brand-grayText font-semibold mt-1 text-base">{getLocalizedReminder(reminder, language).description}</p>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5 text-xs font-bold text-brand-purple">
-                      <span className="bg-brand-purpleLight px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                        <Clock className="w-4 h-4" /> {reminder.time}
-                      </span>
-                      <span className="bg-brand-lavender text-brand-purple px-2 py-0.5 rounded-full capitalize">
-                        {t('rem.labelCategory') || 'Category'}: <b>
-                          {(() => {
-                            const catDict = {
-                              English: { medicine: '💊 Medicine', hydration: '💧 Hydration', meals: '🍱 Meals', exercise: '🚶 Exercise', appointments: '📅 Appointments', family: '🏠 Family', other: '🔔 Other' },
-                              Hindi: { medicine: '💊 दवा', hydration: '💧 पानी', meals: '🍱 भोजन', exercise: '🚶 व्यायाम', appointments: '📅 अपॉइंटमेंट', family: '🏠 परिवार', other: '🔔 अन्य' },
-                              Bengali: { medicine: '💊 ওষুধ', hydration: '💧 জল', meals: '🍱 খাবার', exercise: '🚶 ব্যায়াম', appointments: '📅 অ্যাপয়েন্টমেন্ট', family: '🏠 পরিবার', other: '🔔 অন্যান্য' },
-                              Assamese: { medicine: '💊 ঔষধ', hydration: '💧 পানী', meals: '🍱 আহাৰ', exercise: '🚶 ব্যায়াম', appointments: '📅 নিযুক্তি', family: '🏠 পৰিয়াল', other: '🔔 অন্যান্য' },
-                              Manipuri: { medicine: '💊 হিদাক', hydration: '💧 ঈশিং', meals: '🍱 চীঞ্জাক', exercise: '🚶 খোঙচৎ', appointments: '📅 অপয়েন্টমেন্ট', family: '🏠 ইমুং', other: '🔔 অতোপ্পা' },
-                              Khasi: { medicine: '💊 Dawai', hydration: '💧 Dih Um', meals: '🍱 Bam', exercise: '🚶 Iaiaid', appointments: '📅 Appointment', family: '🏠 Yung', other: '🔔 Kaba Pher' },
-                              Mizo: { medicine: '💊 Dampui', hydration: '💧 Tui', meals: '🍱 Chaw', exercise: '🚶 Exercise', appointments: '📅 Appointment', family: '🏠 Chhungkua', other: '🔔 A dang' },
-                              Nagamese: { medicine: '💊 Dawai', hydration: '💧 Pani', meals: '🍱 Bhaat', exercise: '🚶 Exercise', appointments: '📅 Appointment', family: '🏠 Family', other: '🔔 Alag' },
-                              Tripuri: { medicine: '💊 Dawai', hydration: '💧 Tui', meals: '🍱 Bhaat', exercise: '🚶 Exercise', appointments: '📅 Appointment', family: '🏠 Family', other: '🔔 Alag' }
-                            };
-                            const currentCatDict = (catDict as any)[language] || catDict.English;
-                            return (currentCatDict as any)[reminder.category] || `🔔 ${reminder.category}`;
+
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-extrabold text-xl text-brand-navy">{localizedRem.title}</h3>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${
+                          reminder.status === 'Completed'
+                            ? 'bg-brand-greenBg text-brand-green border border-green-200'
+                            : 'bg-brand-orangeBg text-brand-orange border border-orange-200'
+                        }`}>
+                          {reminder.status === 'Completed' ? (remTranslations[language] || remTranslations.English).statusCompleted : reminder.status === 'Missed' ? (remTranslations[language] || remTranslations.English).statusMissed : (remTranslations[language] || remTranslations.English).statusUpcoming}
+                        </span>
+                        {reminder.isDefault && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200 flex items-center gap-1">
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            Default System
+                          </span>
+                        )}
+                      </div>
+                      
+                      <p className="text-brand-grayText font-semibold mt-1.5 text-base">{localizedRem.description}</p>
+                      
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-xs font-bold text-brand-purple">
+                        <span className="bg-white/90 border border-brand-purpleLight/60 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xs text-brand-navy font-black">
+                          <Clock className="w-4 h-4 text-brand-purple" /> {(() => {
+                            const p = parseTimeTo12h(reminder.time);
+                            return `${p.hour}:${p.minute} ${p.ampm}`;
                           })()}
-                        </b>
-                      </span>
-                      <span>{t('rem.labelRepeat') || 'Repeat'}: <b>{
-                        reminder.repeat === 'Daily' ? (remTranslations[language] || remTranslations.English).daily :
-                        reminder.repeat === 'Weekly' ? (remTranslations[language] || remTranslations.English).weekly :
-                        reminder.repeat === 'Every 2 hours' ? (remTranslations[language] || remTranslations.English).every2h :
-                        reminder.repeat === 'Once' ? (remTranslations[language] || remTranslations.English).once :
-                        reminder.repeat
-                      }</b></span>
+                        </span>
+                        <span className={`px-3 py-1 rounded-full capitalize border shadow-xs ${catStyle.bg}`}>
+                          {t('rem.labelCategory') || 'Category'}: <b>
+                            {(() => {
+                              const catDict = {
+                                English: { medicine: 'Medicine', hydration: 'Hydration', meals: 'Meals', exercise: 'Exercise', appointments: 'Appointments', family: 'Family', other: 'Other' },
+                                Hindi: { medicine: 'दवा', hydration: 'पानी', meals: 'भोजन', exercise: 'व्यायाम', appointments: 'अपॉइंटमेंट', family: 'परिवार', other: 'अन्य' },
+                                Bengali: { medicine: 'ওষুধ', hydration: 'জল', meals: 'খাবার', exercise: 'ব্যায়াম', appointments: 'অ্যাপয়েন্টমেন্ট', family: 'পরিবার', other: 'অন্যান্য' },
+                                Assamese: { medicine: 'ঔষধ', hydration: 'পানী', meals: 'আহাৰ', exercise: 'ব্যায়াম', appointments: 'নিযুক্তি', family: 'পৰিয়াল', other: 'অন্যান্য' },
+                                Manipuri: { medicine: 'হিদাক', hydration: 'ঈশিং', meals: 'চীঞ্জাক', exercise: 'খোঙচৎ', appointments: 'অপয়েন্টমেন্ট', family: 'ইমুং', other: 'অতোপ্পা' },
+                                Khasi: { medicine: 'Dawai', hydration: 'Dih Um', meals: 'Bam', exercise: 'Iaiaid', appointments: 'Appointment', family: 'Yung', other: 'Kaba Pher' },
+                                Mizo: { medicine: 'Dampui', hydration: 'Tui', meals: 'Chaw', exercise: 'Exercise', appointments: 'Appointment', family: 'Chhungkua', other: 'A dang' },
+                                Nagamese: { medicine: 'Dawai', hydration: 'Pani', meals: 'Bhaat', exercise: 'Exercise', appointments: 'Appointment', family: 'Family', other: 'Alag' },
+                                Tripuri: { medicine: 'Dawai', hydration: 'Tui', meals: 'Bhaat', exercise: 'Exercise', appointments: 'Appointment', family: 'Family', other: 'Alag' }
+                              };
+                              const currentCatDict = (catDict as any)[language] || catDict.English;
+                              return (currentCatDict as any)[reminder.category] || reminder.category;
+                            })()}
+                          </b>
+                        </span>
+                        <span className="bg-white/90 border border-brand-purpleLight/60 px-3 py-1 rounded-full text-brand-navy shadow-xs">
+                          {t('rem.labelRepeat') || 'Repeat'}: <b>{
+                          reminder.repeat === 'Daily' ? (remTranslations[language] || remTranslations.English).daily :
+                          reminder.repeat === 'Weekly' ? (remTranslations[language] || remTranslations.English).weekly :
+                          reminder.repeat === 'Every 2 hours' ? (remTranslations[language] || remTranslations.English).every2h :
+                          reminder.repeat === 'Once' ? (remTranslations[language] || remTranslations.English).once :
+                          reminder.repeat
+                        }</b></span>
+                      </div>
                     </div>
                   </div>
+
+                  <div className="flex items-center gap-3 self-end md:self-center">
+                    {/* Active Toggle */}
+                    <button
+                      onClick={() => handleToggleActive(reminder.id)}
+                      className="p-1.5 rounded-lg hover:bg-brand-lavender transition-all"
+                      title={reminder.enabled ? (remTranslations[language] || remTranslations.English).tooltipDisable : (remTranslations[language] || remTranslations.English).tooltipEnable}
+                    >
+                      {reminder.enabled ? (
+                        <ToggleRight className="w-9 h-9 text-brand-purple" />
+                      ) : (
+                        <ToggleLeft className="w-9 h-9 text-brand-grayText" />
+                      )}
+                    </button>
+
+                    {/* Mark complete */}
+                    <button
+                      onClick={() => handleToggleComplete(reminder.id)}
+                      className={`p-3 rounded-xl border transition-all ${
+                        reminder.status === 'Completed'
+                          ? 'bg-brand-green border-brand-green text-white hover:bg-opacity-90'
+                          : 'bg-white border-brand-purpleLight text-brand-purple hover:bg-brand-purpleLight'
+                      }`}
+                      title={(remTranslations[language] || remTranslations.English).tooltipMarkDone}
+                    >
+                      <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+                    </button>
+
+                    {/* Delete */}
+                    <button
+                      onClick={() => handleDelete(reminder.id)}
+                      className="p-3 rounded-xl bg-brand-redBg text-brand-red hover:bg-brand-red hover:text-white transition-all"
+                      title={(remTranslations[language] || remTranslations.English).tooltipDelete}
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
-
-                <div className="flex items-center gap-3 self-end md:self-center">
-                  {/* Active Toggle */}
-                  <button
-                    onClick={() => handleToggleActive(reminder.id)}
-                    className="p-1.5 rounded-lg hover:bg-brand-lavender transition-all"
-                    title={reminder.enabled ? (remTranslations[language] || remTranslations.English).tooltipDisable : (remTranslations[language] || remTranslations.English).tooltipEnable}
-                  >
-                    {reminder.enabled ? (
-                      <ToggleRight className="w-9 h-9 text-brand-purple" />
-                    ) : (
-                      <ToggleLeft className="w-9 h-9 text-brand-grayText" />
-                    )}
-                  </button>
-
-                  {/* Mark complete */}
-                  <button
-                    onClick={() => handleToggleComplete(reminder.id)}
-                    className={`p-3 rounded-xl border transition-all ${
-                      reminder.status === 'Completed'
-                        ? 'bg-brand-green border-brand-green text-white hover:bg-opacity-90'
-                        : 'border-brand-purpleLight text-brand-purple hover:bg-brand-purpleLight'
-                    }`}
-                    title={(remTranslations[language] || remTranslations.English).tooltipMarkDone}
-                  >
-                    <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
-                  </button>
-
-                  {/* Delete */}
-                  <button
-                    onClick={() => handleDelete(reminder.id)}
-                    className="p-3 rounded-xl bg-brand-redBg text-brand-red hover:bg-brand-red hover:text-white transition-all"
-                    title={(remTranslations[language] || remTranslations.English).tooltipDelete}
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -723,30 +786,26 @@ export const Reminders: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-brand-navy mb-2">{(remTranslations[language] || remTranslations.English).time}</label>
-                  <input
-                    type="time"
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-brand-purpleLight focus:outline-none focus:border-brand-purple text-base"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-brand-navy mb-2">{(remTranslations[language] || remTranslations.English).repeatInterval}</label>
-                  <select
-                    value={repeat}
-                    onChange={(e) => setRepeat(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-brand-purpleLight focus:outline-none focus:border-brand-purple text-base"
-                  >
-                    <option value="Daily">{(remTranslations[language] || remTranslations.English).daily}</option>
-                    <option value="Weekly">{(remTranslations[language] || remTranslations.English).weekly}</option>
-                    <option value="Every 2 hours">{(remTranslations[language] || remTranslations.English).every2h}</option>
-                    <option value="Once">{(remTranslations[language] || remTranslations.English).once}</option>
-                  </select>
-                </div>
+              <div>
+                <TimeSelector12h
+                  label={(remTranslations[language] || remTranslations.English).time}
+                  value={time}
+                  onChange={(val24h) => setTime(val24h)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-brand-navy mb-2">{(remTranslations[language] || remTranslations.English).repeatInterval}</label>
+                <select
+                  value={repeat}
+                  onChange={(e) => setRepeat(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-brand-purpleLight focus:outline-none focus:border-brand-purple text-base"
+                >
+                  <option value="Daily">{(remTranslations[language] || remTranslations.English).daily}</option>
+                  <option value="Weekly">{(remTranslations[language] || remTranslations.English).weekly}</option>
+                  <option value="Every 2 hours">{(remTranslations[language] || remTranslations.English).every2h}</option>
+                  <option value="Once">{(remTranslations[language] || remTranslations.English).once}</option>
+                </select>
               </div>
 
               <div>

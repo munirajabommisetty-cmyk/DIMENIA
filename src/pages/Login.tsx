@@ -14,6 +14,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const { setLanguage } = useLanguage();
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [viewMode, setViewMode] = useState<'initial' | 'select' | 'create'>('initial');
 
   // New profile form states
   const [name, setName] = useState('');
@@ -154,7 +155,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center space-y-2">
           <SVGBrain className="w-16 h-16 text-brand-purple animate-pulse" />
-          <h1 className="text-3xl font-extrabold text-brand-navy">Second Brain</h1>
+          <h1 className="text-3xl font-extrabold text-brand-navy">Welcome to DIMENTIACARE</h1>
           <p className="text-brand-grayText font-medium text-sm">Your memory companion</p>
         </div>
 
@@ -207,7 +208,40 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               </button>
             </div>
           </form>
-        ) : !showAddForm ? (
+        ) : viewMode === 'initial' && !showAddForm ? (
+          /* Neutral Initial State */
+          <div className="space-y-6 text-center">
+            <div className="bg-brand-lavender/60 border border-brand-purpleLight rounded-2xl p-4 flex flex-col items-center justify-center space-y-1">
+              <span className="text-xs font-black text-brand-grayText uppercase tracking-wider">Account Status</span>
+              <span className="text-sm font-extrabold text-brand-navy bg-white px-3.5 py-1.5 rounded-full border border-brand-purpleLight shadow-2xs">
+                No account selected
+              </span>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddForm(true);
+                  setViewMode('create');
+                }}
+                className="w-full py-4 bg-brand-purple text-white rounded-xl font-bold hover:bg-opacity-95 flex items-center justify-center gap-2 shadow-sm text-base transition-all"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Create New Account</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode('select')}
+                className="w-full py-3.5 bg-brand-lavender border border-brand-purpleLight text-brand-navy rounded-xl font-bold hover:bg-brand-purpleLight flex items-center justify-center gap-2 text-base transition-all"
+              >
+                <User className="w-5 h-5 text-brand-purple" />
+                <span>Sign In / Choose Account</span>
+              </button>
+            </div>
+          </div>
+        ) : viewMode === 'select' && !showAddForm ? (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-brand-navy border-b border-brand-purpleLight pb-2">Select Profile</h2>
             
@@ -253,11 +287,22 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
             <div className="flex gap-2 pt-2">
               <button
-                onClick={() => setShowAddForm(true)}
-                className="flex-1 py-3.5 bg-brand-purple text-white rounded-xl font-bold hover:bg-opacity-95 flex items-center justify-center gap-2 shadow-sm"
+                type="button"
+                onClick={() => {
+                  setShowAddForm(true);
+                  setViewMode('create');
+                }}
+                className="flex-1 py-3.5 bg-brand-purple text-white rounded-xl font-bold hover:bg-opacity-95 flex items-center justify-center gap-2 shadow-sm text-sm"
               >
-                <Plus className="w-5 h-5" />
-                <span>Create Profile</span>
+                <Plus className="w-4 h-4" />
+                <span>Create New Account</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('initial')}
+                className="px-4 py-3.5 bg-brand-lavender text-brand-navy rounded-xl font-bold hover:bg-brand-purpleLight text-sm"
+              >
+                Back
               </button>
             </div>
           </div>
@@ -438,6 +483,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 type="button"
                 onClick={() => {
                   setShowAddForm(false);
+                  setViewMode('initial');
                   setCreateProfileError(null);
                   setName('');
                   setAge(undefined);

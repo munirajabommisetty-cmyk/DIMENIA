@@ -24,14 +24,17 @@ export interface UserProfile {
   id: string;
   name: string;
   age?: number;
+  gender?: 'Male' | 'Female';
+  region?: string;
   caregiverName?: string;
   language: string;
   role: 'Patient' | 'Caregiver';
-  gender?: 'Male' | 'Female';
   pin?: string;
   password?: string;
   assignedPatients?: string[];
   photo?: string;
+  email?: string;
+  phone?: string;
 }
 
 const KEYS = {
@@ -82,37 +85,88 @@ export const storageService = {
           gender: 'Male',
           pin: '1234'
         };
+        const patientProfile2: UserProfile = {
+          id: 'raja-id',
+          name: 'RAJA',
+          age: 72,
+          caregiverName: 'Caregiver',
+          language: 'English',
+          role: 'Patient',
+          gender: 'Male',
+          pin: '1234'
+        };
+        const patientProfile3: UserProfile = {
+          id: 'sita-id',
+          name: 'SITA',
+          age: 75,
+          caregiverName: 'Caregiver',
+          language: 'English',
+          role: 'Patient',
+          gender: 'Female',
+          pin: '1234'
+        };
+        const patientProfile4: UserProfile = {
+          id: 'anu-patient-id',
+          name: 'ANU',
+          age: 70,
+          caregiverName: 'Caregiver',
+          language: 'English',
+          role: 'Patient',
+          gender: 'Female',
+          pin: '1234'
+        };
         const caregiverProfile1: UserProfile = {
           id: 'caregiver',
           name: 'Caregiver',
           language: 'English',
           role: 'Caregiver',
           password: 'caregiver123',
-          assignedPatients: ['ramesh_1', 'ravi-demo']
+          assignedPatients: ['ravi-demo', 'ramesh_1']
         };
-        localStorage.setItem(KEYS.GLOBAL_PROFILES, JSON.stringify([defaultDemoProfile, patientProfile1, caregiverProfile1]));
+        localStorage.setItem(KEYS.GLOBAL_PROFILES, JSON.stringify([
+          defaultDemoProfile, 
+          patientProfile1, 
+          patientProfile2, 
+          patientProfile3, 
+          patientProfile4, 
+          caregiverProfile1
+        ]));
       }
 
       // Initialize the seed data for default profiles if they don't exist
-      const profilesToSeed = ['ravi-demo', 'ramesh_1'];
-      profilesToSeed.forEach(pId => {
-        const prefix = `sb_prof_${pId}_`;
+      const profilesToSeed = [
+        { id: 'ravi-demo', name: 'Ravi', age: 78, gender: 'Male' },
+        { id: 'ramesh_1', name: 'Ramesh', age: 76, gender: 'Male' },
+        { id: 'raja-id', name: 'RAJA', age: 72, gender: 'Male' },
+        { id: 'sita-id', name: 'SITA', age: 75, gender: 'Female' },
+        { id: 'anu-patient-id', name: 'ANU', age: 70, gender: 'Female' }
+      ];
+
+      profilesToSeed.forEach(p => {
+        const prefix = `sb_prof_${p.id}_`;
         if (!localStorage.getItem(prefix + KEYS.REMINDERS)) {
           localStorage.setItem(prefix + KEYS.SETTINGS, JSON.stringify(initialPatientSettings));
           localStorage.setItem(prefix + KEYS.PROFILE, JSON.stringify({
-            name: pId === 'ravi-demo' ? 'Ravi' : 'Ramesh',
-            age: pId === 'ravi-demo' ? 78 : 76,
+            name: p.name,
+            age: p.age,
             region: 'Guwahati, NER',
             avatar: 'user_avatar',
-            gender: 'Male'
+            gender: p.gender
           }));
           localStorage.setItem(prefix + KEYS.CAREGIVER_PROFILE, JSON.stringify(initialCaregiverProfile));
-          localStorage.setItem(prefix + KEYS.REMINDERS, JSON.stringify(initialReminders));
-          localStorage.setItem(prefix + KEYS.SCHEDULE, JSON.stringify(initialSchedule));
-          localStorage.setItem(prefix + KEYS.MEMORIES, JSON.stringify(initialMemories));
+          localStorage.setItem(prefix + KEYS.REMINDERS, JSON.stringify(p.id === 'ravi-demo' || p.id === 'ramesh_1' ? initialReminders : []));
+          localStorage.setItem(prefix + KEYS.SCHEDULE, JSON.stringify(p.id === 'ravi-demo' || p.id === 'ramesh_1' ? initialSchedule : []));
+          localStorage.setItem(prefix + KEYS.MEMORIES, JSON.stringify(p.id === 'ravi-demo' || p.id === 'ramesh_1' ? initialMemories : []));
           localStorage.setItem(prefix + KEYS.CONTACTS, JSON.stringify(initialContacts));
-          localStorage.setItem(prefix + KEYS.GAMES, JSON.stringify(initialGames));
-          localStorage.setItem(prefix + KEYS.ALERTS, JSON.stringify(initialAlerts));
+          localStorage.setItem(prefix + KEYS.GAMES, JSON.stringify(p.id === 'ravi-demo' || p.id === 'ramesh_1' ? initialGames : [
+            { gameId: 'game-1', gameName: 'Memory Match', difficulty: 'Easy', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+            { gameId: 'game-2', gameName: 'Sequence & Order', difficulty: 'Easy', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+            { gameId: 'game-3', gameName: 'Attention Focus', difficulty: 'Easy', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+            { gameId: 'game-4', gameName: 'Object Recognition', difficulty: 'Medium', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+            { gameId: 'game-5', gameName: 'Daily Routine Recall', difficulty: 'Easy', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+            { gameId: 'game-6', gameName: 'Language & Word Memory', difficulty: 'Medium', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 }
+          ]));
+          localStorage.setItem(prefix + KEYS.ALERTS, JSON.stringify(p.id === 'ravi-demo' || p.id === 'ramesh_1' ? initialAlerts : []));
           localStorage.setItem(prefix + KEYS.MOOD, initialMood);
         }
       });
@@ -190,10 +244,17 @@ export const storageService = {
     localStorage.setItem(prefix + KEYS.PROFILE, JSON.stringify(patientProfile));
     localStorage.setItem(prefix + KEYS.CAREGIVER_PROFILE, JSON.stringify(cgProfile));
     localStorage.setItem(prefix + KEYS.REMINDERS, JSON.stringify(initialReminders));
-    localStorage.setItem(prefix + KEYS.SCHEDULE, JSON.stringify(initialSchedule));
-    localStorage.setItem(prefix + KEYS.MEMORIES, JSON.stringify(initialMemories));
+    localStorage.setItem(prefix + KEYS.SCHEDULE, JSON.stringify([]));
+    localStorage.setItem(prefix + KEYS.MEMORIES, JSON.stringify([]));
     localStorage.setItem(prefix + KEYS.CONTACTS, JSON.stringify(initialContacts));
-    localStorage.setItem(prefix + KEYS.GAMES, JSON.stringify(initialGames));
+    localStorage.setItem(prefix + KEYS.GAMES, JSON.stringify([
+      { gameId: 'game-1', gameName: 'Memory Match', difficulty: 'Easy', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+      { gameId: 'game-2', gameName: 'Sequence & Order', difficulty: 'Easy', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+      { gameId: 'game-3', gameName: 'Attention Focus', difficulty: 'Easy', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+      { gameId: 'game-4', gameName: 'Object Recognition', difficulty: 'Medium', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+      { gameId: 'game-5', gameName: 'Daily Routine Recall', difficulty: 'Easy', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+      { gameId: 'game-6', gameName: 'Language & Word Memory', difficulty: 'Medium', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 }
+    ]));
     localStorage.setItem(prefix + KEYS.ALERTS, JSON.stringify([]));
     localStorage.setItem(prefix + KEYS.MOOD, initialMood);
 
@@ -204,15 +265,29 @@ export const storageService = {
     this.setCurrentUser(null);
   },
 
-  updateProfilePhoto(profileId: string, photoBase64: string) {
+  updateCaregiverAssignedPatients(caregiverId: string, assignedPatients: string[]) {
     const profiles = this.getProfiles();
     const updated = profiles.map(p => {
-      if (p.id === profileId) {
+      if (p.id === caregiverId || p.role === 'Caregiver') {
+        return { ...p, assignedPatients };
+      }
+      return p;
+    });
+    localStorage.setItem(KEYS.GLOBAL_PROFILES, JSON.stringify(updated));
+    window.dispatchEvent(new Event('storage'));
+  },
+
+  updateProfilePhoto(profileId: string, photoBase64: string) {
+    const profiles = this.getProfiles();
+    const targetId = profileId || 'caregiver';
+    const updated = profiles.map(p => {
+      if (p.id === targetId || (p.role === 'Caregiver' && targetId === 'caregiver')) {
         return { ...p, photo: photoBase64 };
       }
       return p;
     });
     localStorage.setItem(KEYS.GLOBAL_PROFILES, JSON.stringify(updated));
+    window.dispatchEvent(new Event('storage'));
   },
 
   // Scoped key helper
@@ -256,7 +331,7 @@ export const storageService = {
   },
 
   getSchedule(): Activity[] {
-    return this.get(this.getScopedKey(KEYS.SCHEDULE), initialSchedule);
+    return this.get(this.getScopedKey(KEYS.SCHEDULE), []);
   },
 
   saveSchedule(schedule: Activity[]) {
@@ -264,23 +339,7 @@ export const storageService = {
   },
 
   getMemories(): Memory[] {
-    const list = this.get(this.getScopedKey(KEYS.MEMORIES), initialMemories);
-    const hasHornbill = list.some((m: any) => m.id === 'mem-4');
-    const hasDiwali = list.some((m: any) => m.id === 'mem-5');
-    if (!hasHornbill || !hasDiwali) {
-      const updated = [...list];
-      if (!hasHornbill) {
-        const hornbillDefault = initialMemories.find((m: any) => m.id === 'mem-4');
-        if (hornbillDefault) updated.push(hornbillDefault);
-      }
-      if (!hasDiwali) {
-        const diwaliDefault = initialMemories.find((m: any) => m.id === 'mem-5');
-        if (diwaliDefault) updated.push(diwaliDefault);
-      }
-      this.saveMemories(updated);
-      return updated;
-    }
-    return list;
+    return this.get(this.getScopedKey(KEYS.MEMORIES), []);
   },
 
   saveMemories(memories: Memory[]) {
@@ -296,11 +355,33 @@ export const storageService = {
   },
 
   getGames(): GameScore[] {
-    return this.get(this.getScopedKey(KEYS.GAMES), initialGames);
+    const cleanDefaultGames: GameScore[] = [
+      { gameId: 'game-1', gameName: 'Memory Match', difficulty: 'Easy', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+      { gameId: 'game-2', gameName: 'Sequence & Order', difficulty: 'Easy', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+      { gameId: 'game-3', gameName: 'Attention Focus', difficulty: 'Easy', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+      { gameId: 'game-4', gameName: 'Object Recognition', difficulty: 'Medium', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+      { gameId: 'game-5', gameName: 'Daily Routine Recall', difficulty: 'Easy', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 },
+      { gameId: 'game-6', gameName: 'Language & Word Memory', difficulty: 'Medium', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 }
+    ];
+    const list = this.get(this.getScopedKey(KEYS.GAMES), cleanDefaultGames);
+    const todayStr = new Date().toISOString().split('T')[0];
+    return list.map((g: any) => {
+      const isCompletedToday = g.lastCompletedDate === todayStr ? (g.completedToday ?? false) : false;
+      return {
+        ...g,
+        completedToday: isCompletedToday,
+        unlockedLevel: g.unlockedLevel || 1
+      };
+    });
   },
 
   saveGames(games: GameScore[]) {
-    this.set(this.getScopedKey(KEYS.GAMES), games);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const gamesToSave = games.map((g: any) => ({
+      ...g,
+      lastCompletedDate: g.completedToday ? (g.lastCompletedDate || todayStr) : g.lastCompletedDate
+    }));
+    this.set(this.getScopedKey(KEYS.GAMES), gamesToSave);
   },
 
   getGameSessions(): any[] {

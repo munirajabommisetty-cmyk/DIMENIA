@@ -8,6 +8,7 @@ export interface Reminder {
   status: 'Upcoming' | 'Scheduled' | 'Completed' | 'Missed';
   repeat: string;
   enabled: boolean;
+  isDefault?: boolean;
   translations?: Record<string, { title: string; description?: string }>;
 }
 
@@ -47,6 +48,7 @@ export interface GameScore {
   bestScore: number;
   completedToday: boolean;
   history?: { date: string; score: number }[];
+  unlockedLevel?: number;
 }
 
 export interface CaregiverAlert {
@@ -87,48 +89,28 @@ export const initialCaregiverProfile = {
 
 export const initialReminders: Reminder[] = [
   {
-    id: 'rem-1',
-    category: 'medicine',
-    title: 'Medicine',
-    description: 'Take your hypertension medicine',
-    time: '14:00',
+    id: 'rem-default-water',
+    category: 'hydration',
+    title: 'DRINK WATER',
+    description: 'Keep hydrated, drink a full glass of water',
+    time: '11:00',
+    date: '2026-08-28',
+    status: 'Upcoming',
+    repeat: 'Every 2 hours',
+    enabled: true,
+    isDefault: true
+  },
+  {
+    id: 'rem-default-walk',
+    category: 'exercise',
+    title: 'WALK — 10 minutes',
+    description: 'Time for a light 10-minute walk in the garden or room',
+    time: '17:00',
     date: '2026-08-28',
     status: 'Upcoming',
     repeat: 'Daily',
-    enabled: true
-  },
-  {
-    id: 'rem-2',
-    category: 'family',
-    title: 'Call Anu',
-    description: 'Talk to your daughter',
-    time: '17:00',
-    date: '2026-08-28',
-    status: 'Scheduled',
-    repeat: 'Daily',
-    enabled: true
-  },
-  {
-    id: 'rem-3',
-    category: 'exercise',
-    title: 'Evening Walk',
-    description: 'Time for a little walk in the garden',
-    time: '18:00',
-    date: '2026-08-28',
-    status: 'Scheduled',
-    repeat: 'Daily',
-    enabled: true
-  },
-  {
-    id: 'rem-4',
-    category: 'hydration',
-    title: 'Drink Water',
-    description: 'Keep hydrated, drink a full glass',
-    time: '11:00',
-    date: '2026-08-28',
-    status: 'Completed',
-    repeat: 'Every 2 hours',
-    enabled: true
+    enabled: true,
+    isDefault: true
   }
 ];
 

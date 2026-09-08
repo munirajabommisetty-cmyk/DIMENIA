@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Brain, 
-  Calendar, 
-  Image, 
-  LifeBuoy, 
   Mic, 
   MicOff, 
   Check, 
+  CheckCircle2,
   Clock, 
   ChevronRight,
   Sparkles,
   Trash2,
   Send,
   Bell,
-  Phone
+  Phone,
+  Pill,
+  Droplets,
+  Utensils,
+  Footprints,
+  Calendar,
+  Moon,
+  Sun,
+  Sunrise,
+  Sunset,
+  Heart,
+  X
 } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import type { Reminder, Activity } from '../data/demoData';
@@ -26,6 +34,7 @@ import { parseVoiceCommand, parseCommandTime } from '../services/voiceCommandPar
 import { getFormattedDate, getISODateString } from '../utils/dateUtils';
 import { getLocalizedReminder, generateTranslations } from '../services/translationService';
 import { voiceActionExecutor } from '../services/voiceActionExecutor';
+import { MindGarden } from '../components/MindGarden';
 
 const localNotificationTranslations: Record<string, Record<string, string>> = {
   English: {
@@ -154,54 +163,6 @@ const localNotificationTranslations: Record<string, Record<string, string>> = {
     remindMeLater: 'Pise chikhai khamdi',
     dismiss: 'Delete chadi'
   }
-};
-
-const motivationDict: Record<string, { emoji: string; text: string }[]> = {
-  English: [
-    { emoji: '🌱', text: 'Small steps today can build stronger memories tomorrow.' },
-    { emoji: '🧠', text: 'Every activity you complete is another moment of practice for your mind.' },
-    { emoji: '🌟', text: "You're making progress. Keep going, one activity at a time!" }
-  ],
-  Hindi: [
-    { emoji: '🌱', text: 'आज के छोटे कदम कल की मजबूत यादें बना सकते हैं।' },
-    { emoji: '🧠', text: 'आपके द्वारा पूरी की गई प्रत्येक गतिविधि आपके दिमाग के लिए अभ्यास का एक और क्षण है।' },
-    { emoji: '🌟', text: 'आप प्रगति कर रहे हैं। आगे बढ़ते रहें, एक समय में एक गतिविधि!' }
-  ],
-  Bengali: [
-    { emoji: '🌱', text: 'আজকের ছোট পদক্ষেপগুলি আগামীকালের আরও শক্তিশালী স্মৃতি তৈরি করতে পারে।' },
-    { emoji: '🧠', text: 'আপনার সম্পূর্ণ করা প্রতিটি কার্যকলাপ আপনার মনের অনুশীলনের আরেকটি মুহূর্ত।' },
-    { emoji: '🌟', text: 'আপনি উন্নতি করছেন। এগিয়ে যান, একবারে একটি কাজ করুন!' }
-  ],
-  Assamese: [
-    { emoji: '🌱', text: 'আজিৰ সৰু পদক্ষেপে কাইলৈ অধিক শক্তিশালী স্মৃতি গঠন কৰিব পাৰে।' },
-    { emoji: '🧠', text: 'আপুনি সম্পূৰ্ণ কৰা প্ৰতিটো কাৰ্যই আপোনাৰ মনৰ বাবে এক নতুন অনুশীলন।' },
-    { emoji: '🌟', text: 'আপুনি উন্নতি কৰিছে। এইদৰেই আগবাঢ়ি যাওক, একোটা কাম সম্পূৰ্ণ কৰক!' }
-  ],
-  Manipuri: [
-    { emoji: '🌱', text: 'ঙসিগী অপীকপা খঙ অমনা তুংগী মফমদা হেন্না ফবা মেমোরী শেম্বা ঙমগনি।' },
-    { emoji: '🧠', text: 'নহাক্না লোইশিনবা থবক খুদিংমক মগজুগীদমক এক্সরসাইज অমা ওইগনি।' },
-    { emoji: '🌟', text: 'নহাক্না মাংলোমদা চংশিল্লি। লেপ্তনা চংশিল্লু, থবক অমমম লোইশিল্লু!' }
-  ],
-  Khasi: [
-    { emoji: '🌱', text: 'Ki synran mynta ka sngi ki kynmaw kham bha lashai.' },
-    { emoji: '🧠', text: 'Jingtrei kiba phi dep ki ai jinghikai thymmai sha ka khlieh jong phi.' },
-    { emoji: '🌟', text: 'Phi mar ia pyndep kham bha baroh. Nang iaid shaphrang.' }
-  ],
-  Mizo: [
-    { emoji: '🌱', text: 'Vawiina i chet te tak te te hian naktuk atan hriatna tha zawk a siam thei.' },
-    { emoji: '🧠', text: 'I hna thawh zawh tawh apiang hi i rilru sawizawina hun a ni.' },
-    { emoji: '🌟', text: 'I hmasawn mek e. Tluang takin kal zel rawh.' }
-  ],
-  Nagamese: [
-    { emoji: '🌱', text: 'Aji laga chutu step khan pora kali bhal memory banabole pare.' },
-    { emoji: '🧠', text: 'Apuni khatam kura sob activity dhemak bhal kuribole practice ase.' },
-    { emoji: '🌟', text: 'Apuni agefalte jase. Chalikena thakibi, ekta time te ekta activity!' }
-  ],
-  Tripuri: [
-    { emoji: '🌱', text: 'Chadi chuny step khan pora chokhichang memory phungnai.' },
-    { emoji: '🧠', text: 'Jotoni activity complete khailamung nini dhemak bhal khailani.' },
-    { emoji: '🌟', text: 'Nini progress chola tongkha. Saimung tongdi, ekta activity khamdi.' }
-  ]
 };
 
 const alpineIntroDict: Record<string, string> = {
@@ -549,6 +510,68 @@ const localHomeToastTranslations: Record<string, Record<string, string>> = {
   }
 };
 
+const getReminderCategoryConfig = (category: string) => {
+  switch (category?.toLowerCase()) {
+    case 'medicine':
+      return {
+        icon: Pill,
+        bg: 'bg-purple-100 text-purple-700 border-purple-200',
+        label: 'Medicine'
+      };
+    case 'hydration':
+    case 'water':
+      return {
+        icon: Droplets,
+        bg: 'bg-sky-100 text-sky-700 border-sky-200',
+        label: 'Hydration'
+      };
+    case 'meals':
+    case 'food':
+    case 'meal':
+      return {
+        icon: Utensils,
+        bg: 'bg-amber-100 text-amber-700 border-amber-200',
+        label: 'Meals'
+      };
+    case 'exercise':
+    case 'walking':
+    case 'walk':
+      return {
+        icon: Footprints,
+        bg: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+        label: 'Exercise'
+      };
+    case 'appointments':
+    case 'appointment':
+      return {
+        icon: Calendar,
+        bg: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+        label: 'Appointment'
+      };
+    case 'family':
+    case 'phone':
+    case 'call':
+      return {
+        icon: Phone,
+        bg: 'bg-rose-100 text-rose-700 border-rose-200',
+        label: 'Family Call'
+      };
+    case 'sleep':
+      return {
+        icon: Moon,
+        bg: 'bg-slate-100 text-slate-700 border-slate-200',
+        label: 'Sleep'
+      };
+    case 'other':
+    default:
+      return {
+        icon: Bell,
+        bg: 'bg-orange-100 text-orange-700 border-orange-200',
+        label: 'Reminder'
+      };
+  }
+};
+
 export const Home: React.FC = () => {
   const navigate = useNavigate();
   const { t, language, setLanguage } = useLanguage();
@@ -613,6 +636,7 @@ export const Home: React.FC = () => {
       
       const allReminders = storageService.getReminders();
       const due = allReminders.find(r => {
+        if (r.isDefault) return false;
         if (r.status !== 'Upcoming' && r.status !== 'Scheduled') return false;
         
         const rDate = r.date || todayStr;
@@ -1209,19 +1233,10 @@ export const Home: React.FC = () => {
             navigate(-1);
             return;
           }
-          console.log(`[DIAGNOSTIC] 8. callbacks.navigate() invoked with path: "${path}"`);
-          console.log(`[DIAGNOSTIC] 9. window.location.href BEFORE navigation: "${window.location.href}", hash: "${window.location.hash}"`);
-          console.log("[VOICE NAV] Home.tsx navigate callback triggered. Path:", path);
+          console.log(`[VOICE NAV] Home.tsx immediate navigate to: "${path}"`, state);
           triggerToast(ht.navigating);
-          setTimeout(() => {
-            console.log("[VOICE NAV] Executing navigate to:", path);
-            navigate(path, state);
-            if (window.location.hash !== '#' + path && path.startsWith('/')) {
-              console.log("[VOICE NAV] HashRouter fallback trigger. Hash:", '#' + path);
-              window.location.hash = '#' + path;
-            }
-            console.log(`[DIAGNOSTIC] 9. window.location.href AFTER navigation: "${window.location.href}", hash: "${window.location.hash}"`);
-          }, 1500);
+          const navOptions = state ? (state.state !== undefined ? state : { state }) : undefined;
+          navigate(path, navOptions);
         },
         setActiveCall: (name: string | null) => {
           setActiveCall(name);
@@ -1381,6 +1396,176 @@ export const Home: React.FC = () => {
 
   // Dynamic time-based greeting calculation in Asia/Kolkata timezone
   const [greeting, setGreeting] = useState('');
+  const [greetingTimePeriod, setGreetingTimePeriod] = useState<'morning' | 'afternoon' | 'evening' | 'night'>('morning');
+
+  const getGreetingTheme = (period: 'morning' | 'afternoon' | 'evening' | 'night') => {
+    switch (period) {
+      case 'morning':
+        return {
+          container: 'border-amber-200/90 bg-gradient-to-r from-sky-100 via-amber-50 to-orange-100 shadow-sm',
+          titleText: 'text-amber-950 font-black',
+          subText: 'text-amber-900/80',
+          userNameText: 'text-amber-950',
+          badge: 'bg-amber-100 text-amber-900 border-amber-300',
+          avatarBorder: 'border-amber-400 bg-amber-100/80',
+          svg: (
+            <svg className="w-56 h-56 text-amber-400/60 transform translate-x-4 -translate-y-4" viewBox="0 0 120 120" fill="none">
+              {/* Rising Morning Sun */}
+              <circle cx="60" cy="60" r="26" fill="#FBBF24" fillOpacity="0.4" />
+              <circle cx="60" cy="60" r="18" fill="#F59E0B" fillOpacity="0.8" />
+              {/* Sun Rays */}
+              <g stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" opacity="0.6">
+                <line x1="60" y1="24" x2="60" y2="12" />
+                <line x1="60" y1="96" x2="60" y2="108" />
+                <line x1="24" y1="60" x2="12" y2="60" />
+                <line x1="96" y1="60" x2="108" y2="60" />
+                <line x1="34" y1="34" x2="26" y2="26" />
+                <line x1="86" y1="86" x2="94" y2="94" />
+                <line x1="34" y1="86" x2="26" y2="94" />
+                <line x1="86" y1="34" x2="94" y2="26" />
+              </g>
+              {/* Soft Morning Clouds */}
+              <path d="M30 80 Q 42 66 58 78 Q 72 64 88 78 Q 98 76 102 85 Z" fill="#FFFFFF" fillOpacity="0.6" />
+            </svg>
+          )
+        };
+      case 'afternoon':
+        return {
+          container: 'border-sky-200/90 bg-gradient-to-r from-sky-100 via-blue-50 to-indigo-50 shadow-sm',
+          titleText: 'text-slate-900 font-black',
+          subText: 'text-slate-700',
+          userNameText: 'text-slate-900',
+          badge: 'bg-sky-100 text-sky-900 border-sky-300',
+          avatarBorder: 'border-sky-400 bg-sky-100/80',
+          svg: (
+            <svg className="w-56 h-56 text-sky-400/60 transform translate-x-4 -translate-y-4" viewBox="0 0 120 120" fill="none">
+              {/* Bright Afternoon Sun */}
+              <circle cx="75" cy="40" r="20" fill="#FBBF24" fillOpacity="0.85" />
+              {/* Fluffy Daytime Cumulus Clouds */}
+              <path d="M15 75 Q 30 55 50 70 Q 70 50 90 68 Q 105 60 115 75 Z" fill="#FFFFFF" fillOpacity="0.75" />
+              <path d="M35 88 Q 50 72 70 85 Q 85 70 100 88 Z" fill="#E0F2FE" fillOpacity="0.5" />
+            </svg>
+          )
+        };
+      case 'evening':
+        return {
+          container: 'border-purple-200/90 bg-gradient-to-r from-amber-100 via-rose-100 to-purple-100 shadow-sm',
+          titleText: 'text-purple-950 font-black',
+          subText: 'text-purple-900/80',
+          userNameText: 'text-purple-950',
+          badge: 'bg-purple-100 text-purple-900 border-purple-300',
+          avatarBorder: 'border-purple-400 bg-purple-100/80',
+          svg: (
+            <svg className="w-56 h-56 text-rose-400/60 transform translate-x-4 -translate-y-2" viewBox="0 0 120 120" fill="none">
+              {/* Setting Sunset Sun Disc */}
+              <circle cx="60" cy="65" r="24" fill="#F59E0B" fillOpacity="0.65" />
+              {/* Soft Horizon Line */}
+              <line x1="0" y1="85" x2="120" y2="85" stroke="#E11D48" strokeWidth="4" strokeOpacity="0.3" />
+              {/* Sunset Dusk Clouds */}
+              <path d="M20 75 Q 40 60 65 72 Q 85 58 110 75 Z" fill="#FDA4AF" fillOpacity="0.4" />
+              <circle cx="35" cy="30" r="1.5" fill="#FBBF24" />
+              <circle cx="85" cy="25" r="2" fill="#FBBF24" />
+            </svg>
+          )
+        };
+      case 'night':
+      default:
+        return {
+          container: 'border-indigo-900 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 shadow-md',
+          titleText: 'text-white font-black',
+          subText: 'text-indigo-200',
+          userNameText: 'text-white',
+          badge: 'bg-indigo-900/90 text-indigo-200 border-indigo-700',
+          avatarBorder: 'border-indigo-400 bg-indigo-900/80',
+          svg: (
+            <svg className="w-56 h-56 text-indigo-300/50 transform translate-x-4 -translate-y-4" viewBox="0 0 120 120" fill="none">
+              {/* Glowing Crescent Moon */}
+              <path d="M68 30 A 28 28 0 1 0 92 84 A 34 34 0 1 1 68 30 Z" fill="#FDE047" fillOpacity="0.8" />
+              {/* Subtle Twinkling Stars */}
+              <circle cx="30" cy="35" r="1.5" fill="white" fillOpacity="0.85" />
+              <circle cx="45" cy="22" r="2" fill="white" fillOpacity="0.95" />
+              <circle cx="85" cy="20" r="1" fill="white" fillOpacity="0.8" />
+              <circle cx="95" cy="40" r="2" fill="white" fillOpacity="0.9" />
+              <circle cx="22" cy="70" r="1.2" fill="white" fillOpacity="0.75" />
+            </svg>
+          )
+        };
+    }
+  };
+
+  const getVoiceTheme = (period: 'morning' | 'afternoon' | 'evening' | 'night') => {
+    switch (period) {
+      case 'morning':
+        return {
+          cardBg: 'bg-gradient-to-br from-amber-50/95 via-amber-100/60 to-orange-50/90',
+          borderColor: 'border-amber-300/90 shadow-amber-500/10 hover:border-amber-400',
+          titleText: 'text-amber-950',
+          subText: 'text-amber-900/80',
+          micBg: 'bg-gradient-to-br from-amber-500 to-orange-600 border-amber-200 text-white shadow-amber-500/30 hover:shadow-amber-500/50',
+          idleRing1: 'border-amber-400/50 bg-amber-400/15',
+          idleRing2: 'border-amber-500/60 bg-amber-400/25',
+          badge: 'bg-amber-100/90 text-amber-950 border-amber-300',
+          sparkleColor: 'text-amber-500',
+          ambientGlow1: 'bg-amber-300/30',
+          ambientGlow2: 'bg-orange-300/25',
+          glowBorder: 'from-amber-400/50 via-orange-400/40 to-amber-300/50',
+          animationClass: 'motion-safe:animate-pulse',
+          animationDuration: '5s'
+        };
+      case 'afternoon':
+        return {
+          cardBg: 'bg-gradient-to-br from-sky-50/90 via-amber-50/80 to-orange-50/70',
+          borderColor: 'border-sky-300/80 shadow-sky-500/10 hover:border-sky-400',
+          titleText: 'text-sky-950',
+          subText: 'text-sky-900/80',
+          micBg: 'bg-gradient-to-br from-sky-500 via-amber-500 to-orange-500 border-sky-200 text-white shadow-sky-500/30 hover:shadow-sky-500/50',
+          idleRing1: 'border-sky-300/50 bg-sky-400/15',
+          idleRing2: 'border-amber-400/60 bg-amber-400/25',
+          badge: 'bg-sky-100/90 text-sky-950 border-sky-300',
+          sparkleColor: 'text-sky-500',
+          ambientGlow1: 'bg-sky-200/40',
+          ambientGlow2: 'bg-amber-200/30',
+          glowBorder: 'from-sky-400/50 via-amber-300/40 to-sky-200/50',
+          animationClass: 'motion-safe:animate-pulse',
+          animationDuration: '6s'
+        };
+      case 'evening':
+        return {
+          cardBg: 'bg-gradient-to-br from-rose-50/90 via-amber-50/70 to-purple-50/80',
+          borderColor: 'border-rose-300/80 shadow-rose-500/10 hover:border-rose-400',
+          titleText: 'text-rose-950',
+          subText: 'text-rose-900/80',
+          micBg: 'bg-gradient-to-br from-rose-500 via-amber-600 to-purple-600 border-rose-200 text-white shadow-rose-500/30 hover:shadow-rose-500/50',
+          idleRing1: 'border-rose-300/50 bg-rose-400/15',
+          idleRing2: 'border-purple-300/60 bg-purple-400/20',
+          badge: 'bg-rose-100/90 text-rose-950 border-rose-300',
+          sparkleColor: 'text-rose-500',
+          ambientGlow1: 'bg-rose-300/30',
+          ambientGlow2: 'bg-purple-300/25',
+          glowBorder: 'from-rose-400/50 via-amber-400/40 to-purple-400/50',
+          animationClass: 'motion-safe:animate-pulse',
+          animationDuration: '7s'
+        };
+      case 'night':
+      default:
+        return {
+          cardBg: 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900',
+          borderColor: 'border-indigo-400/70 shadow-indigo-500/25 hover:border-indigo-300',
+          titleText: 'text-indigo-50',
+          subText: 'text-indigo-200/90',
+          micBg: 'bg-gradient-to-br from-indigo-500 via-purple-600 to-sky-500 border-indigo-300 text-white shadow-indigo-500/40 hover:shadow-indigo-500/60',
+          idleRing1: 'border-indigo-400/50 bg-indigo-400/15',
+          idleRing2: 'border-sky-400/60 bg-sky-400/20',
+          badge: 'bg-indigo-900/90 text-indigo-100 border-indigo-700',
+          sparkleColor: 'text-amber-400',
+          ambientGlow1: 'bg-indigo-500/20',
+          ambientGlow2: 'bg-sky-500/15',
+          glowBorder: 'from-indigo-400/50 via-sky-400/40 to-indigo-600/50',
+          animationClass: 'motion-safe:animate-pulse',
+          animationDuration: '8s'
+        };
+    }
+  };
 
   useEffect(() => {
     const updateGreeting = () => {
@@ -1406,16 +1591,22 @@ export const Home: React.FC = () => {
 
       const langGreeting = greetingMap[language] || greetingMap.English;
       let prefix = langGreeting.morning;
+      let period: 'morning' | 'afternoon' | 'evening' | 'night' = 'morning';
       if (istHour >= 5 && istHour < 12) {
         prefix = langGreeting.morning;
+        period = 'morning';
       } else if (istHour >= 12 && istHour < 17) {
         prefix = langGreeting.afternoon;
-      } else if (istHour >= 17 && istHour < 21) {
+        period = 'afternoon';
+      } else if (istHour >= 17 && istHour < 20) {
         prefix = langGreeting.evening;
+        period = 'evening';
       } else {
         prefix = langGreeting.night;
+        period = 'night';
       }
       setGreeting(`${prefix}, ${userName}! 👋`);
+      setGreetingTimePeriod(period);
     };
 
     updateGreeting();
@@ -1434,264 +1625,293 @@ export const Home: React.FC = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-brand-purpleLight shadow-sm">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-navy truncate">
-            {greeting}
-          </h1>
-          <p className="text-brand-grayText font-medium text-sm sm:text-base mt-1">{getFormattedDate(new Date(), language)}</p>
-        </div>
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <div className="text-right hidden sm:block">
-            <span className="block font-bold text-brand-navy text-sm sm:text-base truncate">{userName}</span>
-            <span className="text-[10px] sm:text-xs text-brand-green bg-brand-greenBg px-2 py-0.5 rounded-full font-bold">
-              {activeUser?.role || 'Patient'}
-            </span>
-          </div>
-          <button 
-            onClick={() => {
-              setShowProfileModal(true);
-              setPhotoPreview(null);
-            }}
-            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-brand-purple overflow-hidden flex items-center justify-center bg-brand-purpleLight hover:scale-105 active:scale-95 transition-all focus:outline-none"
-            title="View Profile Details"
-          >
-            {activeUser?.photo ? (
-              <img src={activeUser.photo} alt={userName} className="w-full h-full object-cover" />
-            ) : (
-              <SVGElderlyAvatar className="w-full h-full" gender={activeUser?.gender} />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Voice Assistant / Talk Card */}
-      <div className="bg-white rounded-3xl p-8 border border-brand-purpleLight shadow-sm flex flex-col items-center text-center relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-brand-purpleLight rounded-bl-full opacity-30 pointer-events-none" />
-        <h2 className="text-2xl font-bold text-brand-navy">{t('nav.talkToMe')}</h2>
-        <p className="text-brand-grayText font-medium mt-2 max-w-md">
-          {voiceText === 'You can ask me anything...' ? t('home.speakPrompt') : 
-           voiceText === 'Listening to your voice...' ? t('voice.listening') : 
-           voiceText === 'Listening to your voice' ? t('voice.listening') : 
-           voiceText === 'Heard: "". Understanding...' ? t('voice.understanding') :
-           voiceText.startsWith('Heard: "') && voiceText.endsWith('". Understanding...') ? 
-             `${t('voice.youSaid')}: "${voiceText.substring(8, voiceText.length - 20)}". ${t('voice.understanding')}` : 
-           voiceText}
-        </p>
-
-        {/* Big Mic Button or Text Fallback */}
-        {voiceStatus === 'unsupported' ? (
-          <div className="w-full max-w-md space-y-4 pt-4 text-brand-red font-semibold">
-            {t('voice.unsupported')}
-            <form onSubmit={handleTextInputSubmit} className="flex gap-2 mt-4">
-              <input
-                type="text"
-                value={textCommand}
-                onChange={(e) => setTextCommand(e.target.value)}
-                placeholder={labels.typePlaceholder}
-                className="flex-1 px-4 py-3 rounded-xl border border-brand-purpleLight focus:outline-none focus:border-brand-purple font-semibold text-brand-navy"
-              />
-              <button type="submit" className="p-3 bg-brand-purple text-white rounded-xl hover:bg-opacity-95">
-                <Send className="w-5 h-5" />
-              </button>
-            </form>
-          </div>
-        ) : (
-          <div className="w-full max-w-md flex flex-col items-center space-y-4">
-            {/* Attractive ALPINE Voice Interaction Waveform */}
-            <div className="w-full flex flex-col items-center justify-center space-y-4 my-2">
-              {/* Circular Animation Pulsing rings around Mic */}
-              <div className="relative flex items-center justify-center w-36 h-36">
-                
-                {/* IDLE state concentric rings */}
-                {voiceStatus === 'idle' && (
-                  <>
-                    <div className="absolute w-32 h-32 rounded-full border border-brand-purple/20 bg-brand-purple/5 animate-pulse" style={{ animationDuration: '3s' }} />
-                    <div className="absolute w-28 h-28 rounded-full border border-brand-purple/30 bg-brand-purple/10 animate-pulse" style={{ animationDuration: '2s' }} />
-                  </>
-                )}
-
-                {/* LISTENING state concentric rings */}
-                {voiceStatus === 'listening' && (
-                  <>
-                    <div className="absolute w-36 h-36 rounded-full bg-brand-purple/10 animate-ping" style={{ animationDuration: '1.5s' }} />
-                    <div className="absolute w-32 h-32 rounded-full bg-brand-purple/20 animate-pulse" style={{ animationDuration: '0.8s' }} />
-                  </>
-                )}
-
-                {/* PROCESSING state concentric spinning ring */}
-                {voiceStatus === 'processing' && (
-                  <div className="absolute w-32 h-32 rounded-full border-4 border-t-brand-purple border-brand-purpleLight animate-spin" />
-                )}
-
-                {/* SPEAKING state rippling concentric rings */}
-                {voiceStatus === 'speaking' && (
-                  <>
-                    <div className="absolute w-36 h-36 rounded-full border-2 border-brand-blue/30 animate-pulse" style={{ animationDuration: '1s' }} />
-                    <div className="absolute w-32 h-32 rounded-full border-2 border-brand-purple/40 animate-ping" style={{ animationDuration: '2s' }} />
-                  </>
-                )}
-
-                {/* Main Microphone Button */}
-                <button
-                  onClick={handleSpeak}
-                  className={`relative z-10 w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl border-4 ${
-                    voiceStatus === 'listening'
-                      ? 'bg-brand-red border-brand-redLight text-white scale-95'
-                      : voiceStatus === 'processing'
-                      ? 'bg-brand-orange border-brand-orangeLight text-white animate-pulse'
-                      : voiceStatus === 'speaking'
-                      ? 'bg-brand-blue border-brand-blueLight text-white'
-                      : 'bg-brand-purple border-brand-purpleLight text-white hover:bg-brand-blue hover:scale-105 active:scale-95'
-                  }`}
-                  aria-label={t('home.tapSpeak')}
-                >
-                  {voiceStatus === 'listening' ? (
-                    <MicOff className="w-10 h-10 animate-pulse" />
-                  ) : (
-                    <Mic className="w-10 h-10" />
-                  )}
-                </button>
-              </div>
-
-              {/* Textual State Indicators for Accessibility */}
-              {(() => {
-                const labels = voiceStatusLabels[language] || voiceStatusLabels.English;
-                return (
-                  <div className="flex flex-col items-center space-y-1">
-                    <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full ${
-                      voiceStatus === 'listening'
-                        ? 'bg-brand-redBg text-brand-red animate-pulse'
-                        : voiceStatus === 'processing'
-                        ? 'bg-brand-orangeBg text-brand-orange animate-bounce'
-                        : voiceStatus === 'speaking'
-                        ? 'bg-brand-blueBg text-brand-blue'
-                        : 'bg-brand-purpleLight text-brand-purple'
-                    }`}>
-                      {voiceStatus === 'listening' ? `${labels.listening} (${recordingSeconds}s)` :
-                       voiceStatus === 'processing' ? labels.thinking :
-                       voiceStatus === 'speaking' ? labels.speaking :
-                       labels.idle}
-                    </span>
-                    <span className="text-[11px] font-bold text-brand-grayText">
-                      {voiceStatus === 'listening' ? labels.speakAdvice :
-                       voiceStatus === 'processing' ? labels.thinkingAdvice :
-                       voiceStatus === 'speaking' ? labels.listeningAdvice :
-                       labels.tapToTalk}
-                    </span>
-                  </div>
-                );
-              })()}
-
-              {/* Animated Waveform Visualizer */}
-              <div className="flex items-center justify-center gap-1.5 h-10 px-4 w-full">
-                {voiceStatus === 'listening' ? (
-                  <>
-                    <span className="w-1.5 h-6 bg-brand-purple rounded-full animate-bounce" style={{ animationDelay: '0.1s', animationDuration: '0.6s' }} />
-                    <span className="w-1.5 h-10 bg-brand-blue rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '0.7s' }} />
-                    <span className="w-1.5 h-4 bg-brand-purple rounded-full animate-bounce" style={{ animationDelay: '0.3s', animationDuration: '0.5s' }} />
-                    <span className="w-1.5 h-9 bg-brand-blue rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '0.8s' }} />
-                    <span className="w-1.5 h-6 bg-brand-purple rounded-full animate-bounce" style={{ animationDelay: '0.5s', animationDuration: '0.6s' }} />
-                    <span className="w-1.5 h-8 bg-brand-blue rounded-full animate-bounce" style={{ animationDelay: '0.6s', animationDuration: '0.7s' }} />
-                  </>
-                ) : voiceStatus === 'processing' ? (
-                  <div className="flex gap-2.5">
-                    <span className="w-3 h-3 bg-brand-orange rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                    <span className="w-3 h-3 bg-brand-orange rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
-                    <span className="w-3 h-3 bg-brand-orange rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
-                  </div>
-                ) : voiceStatus === 'speaking' ? (
-                  <div className="relative w-48 h-8 flex items-center justify-center">
-                    <div className="absolute w-full h-0.5 bg-brand-blue/30 rounded" />
-                    <div className="flex items-center justify-center gap-1.5">
-                      <span className="w-2 h-2 bg-brand-blue rounded-full animate-ping" style={{ animationDuration: '1.2s', animationDelay: '0s' }} />
-                      <span className="w-2.5 h-2.5 bg-brand-purple rounded-full animate-ping" style={{ animationDuration: '1.2s', animationDelay: '0.2s' }} />
-                      <span className="w-2 h-2 bg-brand-blue rounded-full animate-ping" style={{ animationDuration: '1.2s', animationDelay: '0.4s' }} />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-48 h-1 bg-brand-purpleLight rounded-full opacity-40" />
-                )}
-              </div>
+      {/* Header Greeting Box with Dynamic Time Theme */}
+      {(() => {
+        const theme = getGreetingTheme(greetingTimePeriod);
+        return (
+          <div className={`relative overflow-hidden flex items-center justify-between gap-4 p-6 rounded-2xl border transition-all duration-500 ${theme.container}`}>
+            {/* Background SVG Theme Illustration */}
+            <div className="absolute right-0 top-0 bottom-0 w-1/2 pointer-events-none opacity-60 overflow-hidden flex items-center justify-end pr-2 z-0">
+              {theme.svg}
             </div>
 
-            {/* If offline, denied, or error, show descriptive warning and text fallback */}
-            {showFallbackInput && voiceStatus !== 'listening' && (
-              <div className="w-full space-y-4 pt-4 border-t border-brand-purpleLight">
-                <form onSubmit={handleTextInputSubmit} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={textCommand}
-                    onChange={(e) => setTextCommand(e.target.value)}
-                    placeholder={labels.typePlaceholder}
-                    className="flex-1 px-4 py-3 rounded-xl border border-brand-purpleLight focus:outline-none focus:border-brand-purple font-semibold text-brand-navy"
-                  />
-                  <button type="submit" className="p-3 bg-brand-purple text-white rounded-xl hover:bg-opacity-95">
-                    <Send className="w-5 h-5" />
-                  </button>
-                </form>
+            <div className="min-w-0 flex-1 relative z-10">
+              <h1 className={`text-2xl sm:text-3xl font-extrabold truncate ${theme.titleText}`}>
+                {greeting}
+              </h1>
+              <p className={`font-medium text-sm sm:text-base mt-1 ${theme.subText}`}>
+                {getFormattedDate(new Date(), language)}
+              </p>
+            </div>
 
-                <div className="flex flex-col gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowManualForm(!showManualForm)}
-                    className="px-4 py-2 text-xs bg-brand-purpleLight text-brand-purple rounded-xl font-bold hover:bg-brand-purple hover:text-white transition-all"
-                  >
-                    {showManualForm ? labels.hideManual : labels.createManual}
-                  </button>
-                  
-                  {showManualForm && (
-                    <form onSubmit={handleManualActivitySubmit} className="bg-brand-lavender border border-brand-purpleLight p-4 rounded-xl text-left space-y-3">
-                      <div>
-                        <label className="block text-xs font-bold text-brand-navy mb-1">{labels.activityTitle}</label>
+            <div className="flex items-center gap-3 flex-shrink-0 relative z-10">
+              <div className="text-right hidden sm:block">
+                <span className={`block font-bold text-sm sm:text-base truncate ${theme.userNameText}`}>{userName}</span>
+                <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] sm:text-xs border ${theme.badge}`}>
+                  {activeUser?.role || 'Patient'}
+                </span>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowProfileModal(true);
+                  setPhotoPreview(null);
+                }}
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 overflow-hidden flex items-center justify-center hover:scale-105 active:scale-95 transition-all focus:outline-none ${theme.avatarBorder}`}
+                title="View Profile Details"
+              >
+                {activeUser?.photo ? (
+                  <img src={activeUser.photo} alt={userName} className="w-full h-full object-cover" />
+                ) : (
+                  <SVGElderlyAvatar className="w-full h-full" gender={activeUser?.gender} />
+                )}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Voice Assistant / Talk Card */}
+      {(() => {
+        const vTheme = getVoiceTheme(greetingTimePeriod);
+        return (
+          <div className={`relative overflow-hidden rounded-3xl p-5 sm:p-6 border-2 transition-all duration-500 shadow-xl group ${vTheme.cardBg} ${vTheme.borderColor} ${vTheme.animationClass}`} style={{ animationDuration: vTheme.animationDuration }}>
+            {/* Animated Time-Aware Gradient Border Glow Overlay */}
+            <div className={`absolute inset-0 bg-gradient-to-r ${vTheme.glowBorder} opacity-25 pointer-events-none blur-xl`} />
+
+            {/* Soft Ambient Glow Backdrops */}
+            <div className={`absolute -top-10 -right-10 w-36 h-36 rounded-full blur-2xl pointer-events-none ${vTheme.ambientGlow1}`} />
+            <div className={`absolute -bottom-10 -left-10 w-36 h-36 rounded-full blur-2xl pointer-events-none ${vTheme.ambientGlow2}`} />
+
+            <div className="relative z-10 w-full flex flex-col items-center">
+              <h2 className={`text-2xl sm:text-3xl font-black flex items-center justify-center gap-2 ${vTheme.titleText}`}>
+                <Sparkles className={`w-6 h-6 ${vTheme.sparkleColor} animate-pulse`} />
+                <span>{t('nav.talkToMe')}</span>
+              </h2>
+              <p className={`font-bold mt-1 text-xs sm:text-sm max-w-md ${vTheme.subText}`}>
+                {voiceText === 'You can ask me anything...' ? t('home.speakPrompt') : 
+                 voiceText === 'Listening to your voice...' ? t('voice.listening') : 
+                 voiceText === 'Listening to your voice' ? t('voice.listening') : 
+                 voiceText === 'Heard: "". Understanding...' ? t('voice.understanding') :
+                 voiceText.startsWith('Heard: "') && voiceText.endsWith('". Understanding...') ? 
+                   `${t('voice.youSaid')}: "${voiceText.substring(8, voiceText.length - 20)}". ${t('voice.understanding')}` : 
+                 voiceText}
+              </p>
+
+              {/* Big Mic Button or Text Fallback */}
+              {voiceStatus === 'unsupported' ? (
+                <div className="w-full max-w-md space-y-3 pt-3 text-brand-red font-semibold">
+                  {t('voice.unsupported')}
+                  <form onSubmit={handleTextInputSubmit} className="flex gap-2 mt-3">
+                    <input
+                      type="text"
+                      value={textCommand}
+                      onChange={(e) => setTextCommand(e.target.value)}
+                      placeholder={labels.typePlaceholder}
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-amber-200 bg-white focus:outline-none focus:border-amber-500 font-semibold text-amber-950 shadow-xs text-sm"
+                    />
+                    <button type="submit" className="p-2.5 bg-amber-600 text-white rounded-xl hover:bg-amber-700 transition-colors shadow-sm">
+                      <Send className="w-5 h-5" />
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="w-full max-w-md flex flex-col items-center space-y-2 sm:space-y-3 mt-2">
+                  {/* Attractive Voice Interaction Container */}
+                  <div className="w-full flex flex-col items-center justify-center space-y-2">
+                    {/* Circular Animation Pulsing rings around Mic */}
+                    <div className="relative flex items-center justify-center w-28 h-28 sm:w-32 sm:h-32">
+                      
+                      {/* IDLE state concentric rings */}
+                      {voiceStatus === 'idle' && (
+                        <>
+                          <div className={`absolute w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 ${vTheme.idleRing1} motion-safe:animate-pulse`} style={{ animationDuration: '3.5s' }} />
+                          <div className={`absolute w-24 h-24 sm:w-26 sm:h-26 rounded-full border ${vTheme.idleRing2} motion-safe:animate-pulse`} style={{ animationDuration: '2.2s' }} />
+                        </>
+                      )}
+
+                      {/* LISTENING state concentric rings */}
+                      {voiceStatus === 'listening' && (
+                        <>
+                          <div className="absolute w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-rose-500/20 motion-safe:animate-ping" style={{ animationDuration: '1.5s' }} />
+                          <div className="absolute w-24 h-24 sm:w-26 sm:h-26 rounded-full bg-rose-500/30 motion-safe:animate-pulse" style={{ animationDuration: '0.8s' }} />
+                        </>
+                      )}
+
+                      {/* PROCESSING state concentric spinning ring */}
+                      {voiceStatus === 'processing' && (
+                        <div className="absolute w-26 h-26 sm:w-28 sm:h-28 rounded-full border-4 border-t-amber-500 border-amber-200 animate-spin" />
+                      )}
+
+                      {/* SPEAKING state rippling concentric rings */}
+                      {voiceStatus === 'speaking' && (
+                        <>
+                          <div className="absolute w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 border-sky-400/40 motion-safe:animate-pulse" style={{ animationDuration: '1s' }} />
+                          <div className="absolute w-24 h-24 sm:w-26 sm:h-26 rounded-full border-2 border-amber-500/40 motion-safe:animate-ping" style={{ animationDuration: '2s' }} />
+                        </>
+                      )}
+
+                      {/* Main Microphone Button */}
+                      <button
+                        onClick={handleSpeak}
+                        className={`relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl border-4 ${
+                          voiceStatus === 'listening'
+                            ? 'bg-rose-600 border-rose-300 text-white scale-95 shadow-rose-500/40'
+                            : voiceStatus === 'processing'
+                            ? 'bg-amber-500 border-amber-200 text-white animate-pulse shadow-amber-500/40'
+                            : voiceStatus === 'speaking'
+                            ? 'bg-sky-600 border-sky-300 text-white shadow-sky-500/40'
+                            : `${vTheme.micBg} hover:scale-105 active:scale-95`
+                        }`}
+                        aria-label={t('home.tapSpeak')}
+                      >
+                        {voiceStatus === 'listening' ? (
+                          <MicOff className="w-9 h-9 sm:w-10 sm:h-10 animate-pulse" />
+                        ) : (
+                          <Mic className="w-9 h-9 sm:w-10 sm:h-10" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Textual State Indicators for Accessibility */}
+                    {(() => {
+                      const labels = voiceStatusLabels[language] || voiceStatusLabels.English;
+                      return (
+                        <div className="flex flex-col items-center space-y-0.5">
+                          <span className={`text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full border shadow-2xs ${
+                            voiceStatus === 'listening'
+                              ? 'bg-rose-100 text-rose-800 border-rose-200 motion-safe:animate-pulse'
+                              : voiceStatus === 'processing'
+                              ? 'bg-amber-100 text-amber-900 border-amber-300 motion-safe:animate-bounce'
+                              : voiceStatus === 'speaking'
+                              ? 'bg-sky-100 text-sky-900 border-sky-200'
+                              : vTheme.badge
+                          }`}>
+                            {voiceStatus === 'listening' ? `${labels.listening} (${recordingSeconds}s)` :
+                             voiceStatus === 'processing' ? labels.thinking :
+                             voiceStatus === 'speaking' ? labels.speaking :
+                             labels.idle}
+                          </span>
+                          <span className={`text-[11px] font-extrabold ${vTheme.subText}`}>
+                            {voiceStatus === 'listening' ? labels.speakAdvice :
+                             voiceStatus === 'processing' ? labels.thinkingAdvice :
+                             voiceStatus === 'speaking' ? labels.listeningAdvice :
+                             labels.tapToTalk}
+                          </span>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Animated Waveform Visualizer */}
+                    <div className="flex items-center justify-center gap-1.5 h-6 sm:h-7 px-4 w-full">
+                      {voiceStatus === 'listening' ? (
+                        <>
+                          <span className="w-1.5 h-5 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s', animationDuration: '0.6s' }} />
+                          <span className="w-1.5 h-8 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '0.7s' }} />
+                          <span className="w-1.5 h-4 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s', animationDuration: '0.5s' }} />
+                          <span className="w-1.5 h-7 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '0.8s' }} />
+                          <span className="w-1.5 h-5 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '0.5s', animationDuration: '0.6s' }} />
+                          <span className="w-1.5 h-6 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.6s', animationDuration: '0.7s' }} />
+                        </>
+                      ) : voiceStatus === 'processing' ? (
+                        <div className="flex gap-2">
+                          <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                          <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                          <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                        </div>
+                      ) : voiceStatus === 'speaking' ? (
+                        <div className="relative w-40 h-6 flex items-center justify-center">
+                          <div className="absolute w-full h-0.5 bg-sky-300/50 rounded" />
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className="w-2 h-2 bg-sky-500 rounded-full animate-ping" style={{ animationDuration: '1.2s', animationDelay: '0s' }} />
+                            <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping" style={{ animationDuration: '1.2s', animationDelay: '0.2s' }} />
+                            <span className="w-2 h-2 bg-sky-500 rounded-full animate-ping" style={{ animationDuration: '1.2s', animationDelay: '0.4s' }} />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-36 h-1 bg-amber-300/40 rounded-full opacity-60" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* If offline, denied, or error, show descriptive warning and text fallback */}
+                  {showFallbackInput && voiceStatus !== 'listening' && (
+                    <div className="w-full space-y-3 pt-3 border-t border-amber-200/60">
+                      <form onSubmit={handleTextInputSubmit} className="flex gap-2">
                         <input
                           type="text"
-                          value={manualTitle}
-                          onChange={(e) => setManualTitle(e.target.value)}
-                          placeholder={language === 'Hindi' ? 'जैसे: शाम की सैर' : language === 'Bengali' ? 'যেমন: সন্ধ্যার হাঁটা' : 'e.g. Evening Walk'}
-                          className="w-full px-3 py-2 rounded-lg border border-brand-purpleLight bg-white text-sm"
-                          required
+                          value={textCommand}
+                          onChange={(e) => setTextCommand(e.target.value)}
+                          placeholder={labels.typePlaceholder}
+                          className="flex-1 px-4 py-2.5 rounded-xl border border-amber-200 bg-white focus:outline-none focus:border-amber-500 font-semibold text-amber-950 shadow-xs text-sm"
                         />
+                        <button type="submit" className="p-2.5 bg-amber-600 text-white rounded-xl hover:bg-amber-700 transition-colors shadow-sm">
+                          <Send className="w-5 h-5" />
+                        </button>
+                      </form>
+
+                      <div className="flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowManualForm(!showManualForm)}
+                          className="px-4 py-2 text-xs bg-amber-100 text-amber-900 border border-amber-200 rounded-xl font-bold hover:bg-amber-200 transition-all"
+                        >
+                          {showManualForm ? labels.hideManual : labels.createManual}
+                        </button>
+                        
+                        {showManualForm && (
+                          <form onSubmit={handleManualActivitySubmit} className="bg-white border border-amber-200 p-4 rounded-xl text-left space-y-3 shadow-xs">
+                            <div>
+                              <label className="block text-xs font-bold text-amber-950 mb-1">{labels.activityTitle}</label>
+                              <input
+                                type="text"
+                                value={manualTitle}
+                                onChange={(e) => setManualTitle(e.target.value)}
+                                placeholder={language === 'Hindi' ? 'जैसे: शाम की सैर' : language === 'Bengali' ? 'যেমন: সন্ধ্যার হাঁটা' : 'e.g. Evening Walk'}
+                                className="w-full px-3 py-2 rounded-lg border border-amber-200 bg-white text-sm"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-amber-950 mb-1">{labels.time}</label>
+                              <input
+                                type="time"
+                                value={manualTime}
+                                onChange={(e) => setManualTime(e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-amber-200 bg-white text-sm"
+                                required
+                              />
+                            </div>
+                            <button type="submit" className="w-full py-2 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 transition-colors">
+                              {labels.saveActivity}
+                            </button>
+                          </form>
+                        )}
                       </div>
-                      <div>
-                        <label className="block text-xs font-bold text-brand-navy mb-1">{labels.time}</label>
-                        <input
-                          type="time"
-                          value={manualTime}
-                          onChange={(e) => setManualTime(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-brand-purpleLight bg-white text-sm"
-                          required
-                        />
+
+                      {/* Suggestions */}
+                      <div className="text-left pt-1">
+                        <span className="block text-xs font-bold text-amber-900/70 uppercase tracking-wider mb-1.5 text-center">{t('voice.trysaying') || 'Try saying:'}</span>
+                        <div className="flex flex-wrap gap-1.5 justify-center">
+                          {[labels.suggNext, labels.suggGame, labels.suggMems].map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => handleCommandParse(s)}
+                              className="px-3 py-1 text-xs bg-white text-amber-950 border border-amber-200 rounded-lg font-semibold hover:border-amber-400 transition-all shadow-2xs"
+                            >
+                              "{s}"
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <button type="submit" className="w-full py-2 bg-brand-purple text-white text-xs font-bold rounded-lg hover:bg-opacity-95">
-                        {labels.saveActivity}
-                      </button>
-                    </form>
+                    </div>
                   )}
                 </div>
-
-                {/* Suggestions */}
-                <div className="text-left pt-2">
-                  <span className="block text-xs font-bold text-brand-grayText uppercase tracking-wider mb-2">{t('voice.trysaying') || 'Try:'}</span>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {[labels.suggNext, labels.suggGame, labels.suggMems].map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => handleCommandParse(s)}
-                        className="px-3 py-1.5 text-xs bg-brand-lavender text-brand-navy border border-brand-purpleLight rounded-lg font-semibold hover:border-brand-purple transition-all"
-                      >
-                        "{s}"
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        )}
-      </div>
+        );
+      })()}
 
       {/* Quick Actions Grid */}
       <div>
@@ -1701,14 +1921,21 @@ export const Home: React.FC = () => {
           {/* Action 1: Brain Games */}
           <div 
             onClick={() => navigate('/games')}
-            className="bg-brand-purpleLight border border-brand-purpleLight p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
+            className="group bg-brand-purpleLight border border-brand-purpleLight p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
           >
-            <div className="w-14 h-14 rounded-xl bg-brand-purple text-white flex items-center justify-center mb-4">
-              <Brain className="w-9 h-9" />
+            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-700 text-white flex items-center justify-center mb-4 shadow-md shadow-purple-500/25 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <svg className="w-10 h-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Brain Games Icon">
+                <path d="M12 9C9.79086 9 8 10.7909 8 13C8 13.9 8.3 14.7 8.8 15.3C7.2 16.1 6 17.9 6 20C6 22.7614 8.23858 25 11 25C11.6 25 12.2 24.9 12.8 24.7C13.6 26.1 15.2 27 17 27H18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M20 9C22.2091 9 24 10.7909 24 13C24 13.7 23.8 14.3 23.4 14.9" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M16 7V25" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 2"/>
+                <circle cx="22" cy="21" r="6.5" fill="#F59E0B" stroke="white" strokeWidth="1.5"/>
+                <path d="M20.5 18.8L24.8 21L20.5 23.2V18.8Z" fill="white"/>
+              </svg>
             </div>
             <h4 className="font-bold text-lg text-brand-navy">{t('nav.brainGames')}</h4>
             <p className="text-sm text-brand-grayText mt-2 flex-1">Play and train your brain with puzzles</p>
-            <span className="text-brand-purple text-sm font-bold mt-4 flex items-center gap-1 group">
+            <span className="text-brand-purple text-sm font-bold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
               {t('home.startTraining')} <ChevronRight className="w-4 h-4" />
             </span>
           </div>
@@ -1716,14 +1943,22 @@ export const Home: React.FC = () => {
           {/* Action 2: My Day */}
           <div 
             onClick={() => navigate('/day')}
-            className="bg-brand-greenBg border border-brand-greenBg p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
+            className="group bg-brand-greenBg border border-brand-greenBg p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
           >
-            <div className="w-14 h-14 rounded-xl bg-brand-green text-white flex items-center justify-center mb-4">
-              <Calendar className="w-9 h-9" />
+            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-green-700 text-white flex items-center justify-center mb-4 shadow-md shadow-emerald-500/25 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <svg className="w-10 h-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="My Day Icon">
+                <rect x="5" y="8" width="22" height="19" rx="3.5" stroke="currentColor" strokeWidth="2.2" fill="currentColor" fillOpacity="0.15"/>
+                <line x1="5" y1="14" x2="27" y2="14" stroke="currentColor" strokeWidth="2"/>
+                <line x1="10" y1="6" x2="10" y2="9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                <line x1="22" y1="6" x2="22" y2="9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                <circle cx="21" cy="20" r="5.5" fill="#FBBF24" stroke="white" strokeWidth="1.5"/>
+                <path d="M19.3 20L20.5 21.2L22.8 19" stroke="#065F46" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
             <h4 className="font-bold text-lg text-brand-navy">{t('nav.myDay')}</h4>
             <p className="text-sm text-brand-grayText mt-2 flex-1">View your schedule & complete tasks</p>
-            <span className="text-brand-green text-sm font-bold mt-4 flex items-center gap-1">
+            <span className="text-brand-green text-sm font-bold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
               {t('home.viewSchedule')} <ChevronRight className="w-4 h-4" />
             </span>
           </div>
@@ -1731,14 +1966,21 @@ export const Home: React.FC = () => {
           {/* Action 3: Memories */}
           <div 
             onClick={() => navigate('/memories')}
-            className="bg-brand-orangeBg border border-brand-orangeBg p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
+            className="group bg-brand-orangeBg border border-brand-orangeBg p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
           >
-            <div className="w-14 h-14 rounded-xl bg-brand-orange text-white flex items-center justify-center mb-4">
-              <Image className="w-9 h-9" />
+            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 text-white flex items-center justify-center mb-4 shadow-md shadow-amber-500/25 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <svg className="w-10 h-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Memories Icon">
+                <rect x="5" y="6" width="22" height="20" rx="3.5" stroke="currentColor" strokeWidth="2.2" fill="currentColor" fillOpacity="0.15"/>
+                <circle cx="11" cy="12" r="2.5" fill="currentColor"/>
+                <path d="M7 22L13 15L17 19L20 16L25 22H7Z" fill="currentColor" fillOpacity="0.7"/>
+                <circle cx="22" cy="21" r="6" fill="#F43F5E" stroke="white" strokeWidth="1.5"/>
+                <path d="M22 23.5L20.2 21.8C19.2 20.9 19.2 19.5 20.1 18.7C20.9 18 22.1 18.1 22.8 19C23.5 18.1 24.7 18 25.5 18.7C26.4 19.5 26.4 20.9 25.4 21.8L22 23.5Z" fill="white"/>
+              </svg>
             </div>
             <h4 className="font-bold text-lg text-brand-navy">{t('nav.memories')}</h4>
             <p className="text-sm text-brand-grayText mt-2 flex-1">Browse your beautiful memories and photos</p>
-            <span className="text-brand-orange text-sm font-bold mt-4 flex items-center gap-1">
+            <span className="text-brand-orange text-sm font-bold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
               {t('nav.memories')} <ChevronRight className="w-4 h-4" />
             </span>
           </div>
@@ -1746,14 +1988,20 @@ export const Home: React.FC = () => {
           {/* Action 4: Help */}
           <div 
             onClick={() => navigate('/help')}
-            className="bg-brand-redBg border border-brand-redBg p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
+            className="group bg-brand-redBg border border-brand-redBg p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
           >
-            <div className="w-14 h-14 rounded-xl bg-brand-red text-white flex items-center justify-center mb-4">
-              <LifeBuoy className="w-9 h-9" />
+            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-rose-500 via-red-600 to-rose-700 text-white flex items-center justify-center mb-4 shadow-md shadow-rose-500/25 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <svg className="w-10 h-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Contact Family Icon">
+                <path d="M7 10C7 8.34315 8.34315 7 10 7H14C15.6569 7 17 8.34315 17 10V12C17 13.6569 15.6569 15 14 15H10C8.34315 15 7 13.6569 7 12V10Z" stroke="currentColor" strokeWidth="2.2" fill="currentColor" fillOpacity="0.15"/>
+                <path d="M6 14C6 19.5228 10.4772 24 16 24H18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+                <circle cx="21" cy="20" r="6.5" fill="#FFFFFF" stroke="#E11D48" strokeWidth="1.5"/>
+                <path d="M21 23.2L19.2 21.5C18.2 20.6 18.2 19.2 19.1 18.4C19.9 17.7 21.1 17.8 21.8 18.7C22.5 17.8 23.7 17.7 24.5 18.4C25.4 19.2 25.4 20.6 24.4 21.5L21 23.2Z" fill="#E11D48"/>
+              </svg>
             </div>
             <h4 className="font-bold text-lg text-brand-navy">{t('nav.help')}</h4>
             <p className="text-sm text-brand-grayText mt-2 flex-1">Reach out for immediate emergency aid</p>
-            <span className="text-brand-red text-sm font-bold mt-4 flex items-center gap-1">
+            <span className="text-brand-red text-sm font-bold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
               {t('home.emergencyContact')} <ChevronRight className="w-4 h-4" />
             </span>
           </div>
@@ -1766,15 +2014,47 @@ export const Home: React.FC = () => {
         
         {/* Today's Reminders Card */}
         <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-brand-purpleLight shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-brand-navy">{t('home.reminders')}</h3>
-            <button 
-              onClick={() => navigate('/reminders')}
-              className="text-brand-purple hover:underline font-bold text-sm"
-            >
-              {t('home.viewAll')}
-            </button>
-          </div>
+          {(() => {
+            const completedCount = reminders.filter(r => r.status === 'Completed').length;
+            const totalCount = reminders.length;
+            
+            const getScoreText = (completed: number, total: number, lang: string) => {
+              const scoreDict: Record<string, string> = {
+                English: `${completed} of ${total} completed`,
+                Hindi: `${completed} / ${total} पूर्ण`,
+                Bengali: `${completed} / ${total} সম্পন্ন`,
+                Assamese: `${completed} / ${total} সম্পূৰ্ণ`,
+                Manipuri: `${completed} / ${total} লোইখ্রে`,
+                Khasi: `${completed} na ${total} dep`,
+                Mizo: `${completed} / ${total} zawh`,
+                Nagamese: `${completed} / ${total} khatai`,
+                Tripuri: `${completed} / ${total} khatai`
+              };
+              return scoreDict[lang] || `${completed} of ${total} completed`;
+            };
+
+            const scoreBadgeText = getScoreText(completedCount, totalCount, language);
+
+            return (
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h3 className="text-xl font-bold text-brand-navy">{t('home.reminders')}</h3>
+                
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-200/90 shadow-2xs font-extrabold text-xs sm:text-sm transition-all duration-300">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 stroke-[2.5]" />
+                    <span>{scoreBadgeText}</span>
+                  </div>
+
+                  <button 
+                    onClick={() => navigate('/reminders')}
+                    className="text-brand-purple hover:underline font-bold text-sm flex-shrink-0"
+                  >
+                    {t('home.viewAll')}
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
 
           {reminders.length === 0 ? (
             <div className="py-8 text-center text-brand-grayText font-medium">
@@ -1782,55 +2062,62 @@ export const Home: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {reminders.slice(0, 3).map((reminder) => (
-                <div 
-                  key={reminder.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-brand-purpleLight hover:bg-brand-lavender transition-all duration-200"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className={`p-3.5 rounded-xl flex-shrink-0 ${
-                      reminder.status === 'Completed' 
-                        ? 'bg-brand-greenBg text-brand-green' 
-                        : 'bg-brand-purpleLight text-brand-purple'
-                    }`}>
-                      <Check className="w-7 h-7 stroke-[3.5]" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xl">
-                          {reminder.category === 'medicine' ? '💊' :
-                           reminder.category === 'hydration' ? '💧' :
-                           reminder.category === 'meals' ? '🍱' :
-                           reminder.category === 'exercise' ? '🚶' :
-                           reminder.category === 'appointments' ? '📅' :
-                           reminder.category === 'family' ? '🏠' : '🔔'}
-                        </span>
-                        <h4 className="font-extrabold text-lg text-brand-navy">{getLocalizedReminder(reminder, language).title}</h4>
+              {reminders.slice(0, 3).map((reminder) => {
+                const config = getReminderCategoryConfig(reminder.category);
+                const IconComp = config.icon;
+                const localized = getLocalizedReminder(reminder, language);
+
+                return (
+                  <div 
+                    key={reminder.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-brand-purpleLight hover:bg-brand-lavender transition-all duration-200"
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Primary Semantic Activity Icon Container */}
+                      <div className="relative flex-shrink-0">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-2xs ${config.bg}`}>
+                          <IconComp className="w-7 h-7 stroke-[2.2]" />
+                        </div>
+                        {reminder.status === 'Completed' && (
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center border-2 border-white shadow-xs" title="Completed">
+                            <Check className="w-3.5 h-3.5 stroke-[3.5]" />
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm font-semibold text-brand-grayText mt-0.5">{getLocalizedReminder(reminder, language).description}</p>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs font-bold text-brand-purple">
-                        <span className="bg-brand-purpleLight px-2.5 py-0.5 rounded-full">{reminder.time}</span>
-                        <span className="text-brand-grayText">({reminder.repeat})</span>
-                        <span className="bg-brand-lavender text-brand-purple px-2 py-0.5 rounded-full capitalize">
-                          {(() => {
-                            const catDict = {
-                              English: { medicine: '💊 Medicine', hydration: '💧 Hydration', meals: '🍱 Meals', exercise: '🚶 Exercise', appointments: '📅 Appointments', family: '🏠 Family', other: '🔔 Other' },
-                              Hindi: { medicine: '💊 दवा', hydration: '💧 पानी', meals: '🍱 भोजन', exercise: '🚶 व्यायाम', appointments: '📅 अपॉइंटमेंट', family: '🏠 परिवार', other: '🔔 अन्य' },
-                              Bengali: { medicine: '💊 ওষুধ', hydration: '💧 জল', meals: '🍱 খাবার', exercise: '🚶 ব্যায়াম', appointments: '📅 অ্যাপয়েন্টমেন্ট', family: '🏠 পরিবার', other: '🔔 অন্যান্য' },
-                              Assamese: { medicine: '💊 ঔষধ', hydration: '💧 পানী', meals: '🍱 আহাৰ', exercise: '🚶 ব্যায়াম', appointments: '📅 নিযুক্তি', family: '🏠 পৰিয়াল', other: '🔔 অন্যান্য' },
-                              Manipuri: { medicine: '💊 হিদাক', hydration: '💧 ঈশিং', meals: '🍱 চীঞ্জাক', exercise: '🚶 খোঙচৎ', appointments: '📅 অপয়েন্টমেন্ট', family: '🏠 ইমুং', other: '🔔 অতোপ্পা' },
-                              Khasi: { medicine: '💊 Dawai', hydration: '💧 Dih Um', meals: '🍱 Bam', exercise: '🚶 Iaiaid', appointments: '📅 Appointment', family: '🏠 Yung', other: '🔔 Kaba Pher' },
-                              Mizo: { medicine: '💊 Dampui', hydration: '💧 Tui', meals: '🍱 Chaw', exercise: '🚶 Exercise', appointments: '📅 Appointment', family: '🏠 Chhungkua', other: '🔔 A dang' },
-                              Nagamese: { medicine: '💊 Dawai', hydration: '💧 Pani', meals: '🍱 Bhaat', exercise: '🚶 Exercise', appointments: '📅 Appointment', family: '🏠 Family', other: '🔔 Alag' },
-                              Tripuri: { medicine: '💊 Dawai', hydration: '💧 Tui', meals: '🍱 Bhaat', exercise: '🚶 Exercise', appointments: '📅 Appointment', family: '🏠 Family', other: '🔔 Alag' }
-                            };
-                            const currentCatDict = (catDict as any)[language] || catDict.English;
-                            return (currentCatDict as any)[reminder.category] || `🔔 ${reminder.category}`;
-                          })()}
-                        </span>
+
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-extrabold text-lg text-brand-navy">{localized.title}</h4>
+                          {reminder.status === 'Completed' && (
+                            <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                              ✓ {t('rem.completed') || 'Completed'}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm font-semibold text-brand-grayText mt-0.5">{localized.description}</p>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs font-bold text-brand-purple">
+                          <span className="bg-brand-purpleLight px-2.5 py-0.5 rounded-full">{reminder.time}</span>
+                          <span className="text-brand-grayText">({reminder.repeat})</span>
+                          <span className="bg-brand-lavender text-brand-purple px-2.5 py-0.5 rounded-full capitalize">
+                            {(() => {
+                              const catDict = {
+                                English: { medicine: 'Medicine', hydration: 'Hydration', meals: 'Meals', exercise: 'Exercise', appointments: 'Appointments', family: 'Family', other: 'Other' },
+                                Hindi: { medicine: 'दवा', hydration: 'पानी', meals: 'भोजन', exercise: 'व्यायाम', appointments: 'अपॉइंटमेंट', family: 'परिवार', other: 'अन्य' },
+                                Bengali: { medicine: 'ওষুধ', hydration: 'জল', meals: 'খাবার', exercise: 'ব্যায়াম', appointments: 'অ্যাপয়েন্টমেন্ট', family: 'পরিবার', other: 'অন্যান্য' },
+                                Assamese: { medicine: 'ঔষধ', hydration: 'পানী', meals: 'আহাৰ', exercise: 'ব্যায়াম', appointments: 'নিযুক্তি', family: 'পৰিয়াল', other: 'অন্যান্য' },
+                                Manipuri: { medicine: 'হিদাক', hydration: 'ঈশিং', meals: 'চীঞ্জাক', exercise: 'খোঙচৎ', appointments: 'অপয়েন্টমেন্ট', family: 'ইমুং', other: 'অতোপ্পা' },
+                                Khasi: { medicine: 'Dawai', hydration: 'Dih Um', meals: 'Bam', exercise: 'Iaiaid', appointments: 'Appointment', family: 'Yung', other: 'Kaba Pher' },
+                                Mizo: { medicine: 'Dampui', hydration: 'Tui', meals: 'Chaw', exercise: 'Exercise', appointments: 'Appointment', family: 'Chhungkua', other: 'A dang' },
+                                Nagamese: { medicine: 'Dawai', hydration: 'Pani', meals: 'Bhaat', exercise: 'Exercise', appointments: 'Appointment', family: 'Family', other: 'Alag' },
+                                Tripuri: { medicine: 'Dawai', hydration: 'Tui', meals: 'Bhaat', exercise: 'Exercise', appointments: 'Appointment', family: 'Family', other: 'Alag' }
+                              };
+                              const currentCatDict = (catDict as any)[language] || catDict.English;
+                              return (currentCatDict as any)[reminder.category] || reminder.category;
+                            })()}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
                   <div className="flex items-center gap-2 self-end sm:self-center">
                     <button
@@ -1859,54 +2146,241 @@ export const Home: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           )}
         </div>
 
-        {/* Daily Motivation Card */}
-        {(() => {
-          const list = motivationDict[language] || motivationDict.English;
-          const idx = new Date().getDate() % list.length;
-          const activeMotivationItem = list[idx];
-          return (
-            <div className="bg-brand-greenBg p-6 rounded-3xl border border-brand-greenBg shadow-sm flex flex-col justify-between self-start w-full">
-              <div>
-                <h3 className="text-xl font-bold text-brand-navy mb-3 flex items-center gap-2">
-                  <span className="text-2xl">{activeMotivationItem.emoji}</span>
-                  {t('home.motivationTitle')}
-                </h3>
-                <p className="text-brand-navy font-semibold text-lg leading-relaxed">
-                  "{activeMotivationItem.text}"
-                </p>
-              </div>
-              <div className="flex justify-end mt-4">
-                <SVGMotivation className="w-16 h-16 text-brand-green" />
-              </div>
-            </div>
-          );
-        })()}
+        {/* Daily Motivation Column */}
+        <div className="lg:col-span-1 flex flex-col gap-4">
+          {(() => {
+            const completedCount = reminders.filter(r => r.status === 'Completed').length;
+            const totalCount = reminders.length;
 
+            const formatter = new Intl.DateTimeFormat('en-US', {
+              timeZone: 'Asia/Kolkata',
+              hour: 'numeric',
+              hour12: false
+            });
+            const istHour = parseInt(formatter.format(new Date()), 10);
+
+            type TimePeriod = 'morning' | 'afternoon' | 'evening' | 'night';
+            let period: TimePeriod = 'morning';
+            if (istHour >= 5 && istHour < 12) period = 'morning';
+            else if (istHour >= 12 && istHour < 17) period = 'afternoon';
+            else if (istHour >= 17 && istHour < 20) period = 'evening';
+            else period = 'night';
+
+            const primaryMotivationMap: Record<string, Record<TimePeriod, string>> = {
+              English: {
+                morning: "Good morning! Start your day with a calm smile and one small step.",
+                afternoon: "You're doing well today. Keep going — every completed activity matters.",
+                evening: "Your day is almost complete. Finish what you can and be proud of your effort.",
+                night: "You've made progress today. Rest well and get ready for a bright tomorrow."
+              },
+              Hindi: {
+                morning: "शुभ प्रभात! अपने दिन की शुरुआत शांत मुस्कान और एक छोटे कदम से करें।",
+                afternoon: "आप बहुत अच्छा कर रहे हैं। धीरे-धीरे आगे बढ़ते रहें — हर प्रयास महत्वपूर्ण है।",
+                evening: "आपका दिन लगभग पूरा हो गया है। जो कर सकते हैं उसे पूरा करें और गर्व महसूस करें।",
+                night: "आपने आज प्रगति की है। अच्छी नींद लें और कल के लिए तैयार हों।"
+              },
+              Bengali: {
+                morning: "শুভ সকাল! একটি মিষ্টি হাসি এবং ছোট পদক্ষেপে দিন শুরু করুন।",
+                afternoon: "আপনি খুব ভালো করছেন। এগিয়ে যান — প্রতিটি কাজ অত্যন্ত মূল্যবান।",
+                evening: "আপনার দিনটি প্রায় শেষ। যা পারেন শেষ করুন এবং নিজের কাজের জন্য গর্বিত হোন।",
+                night: "আপনি আজ ভালো উন্নতি করেছেন। শান্তিতে ঘুমান এবং আগামীকালের জন্য প্রস্তুত হন।"
+              },
+              Assamese: {
+                morning: "শুভ ৰাতিপুৱা! এটা সৰু পদক্ষেপেৰে দিনটো আৰম্ভ কৰক।",
+                afternoon: "আপুনি অতি সুন্দৰকৈ কামবোৰ কৰি আছে। আগবাঢ়ি যাওক।",
+                evening: "আপোনাৰ দিনটো শেষ হ’বলৈ ধৰিছে। নিজৰ চেষ্টাৰ বাবে আনন্দিত হওক।",
+                night: "আপুনি আজি সুন্দৰ অগ্ৰগতি কৰিলে। ভালদৰে শুৱক আৰু কাইলৈৰ বাবে প্ৰস্তুত হওক।"
+              },
+              Manipuri: {
+                morning: "নুংঙাইবা অয়ুক! অপীকপা খঙ অমগা লোয়ননা নুমিত অসি হৌবীয়ু।",
+                afternoon: "নহাক ফোজনা তৌরি। তেন্না তেন্না মাংলোমদা চংশিল্লু।",
+                evening: "নুমিত অসি লোইশিনবা ঙমখ্রে, হৌজিক নুংঙাইনা পথাপীয়ু।",
+                night: "নহাক ঙসি ফোজনা তৌখ্রে। ফোজনা তুমীয়ু অমসুং শেম-শাবীয়ু।"
+              },
+              Khasi: {
+                morning: "Khublei mynstep! Pynkyntiew ia ka sngi da ka jingrkhie bad jingiaid suki.",
+                afternoon: "Phi iaid bha shibun. Nang iaid shaphrang katba lah.",
+                evening: "Ka sngi ka jan dep. Jah thait bad kmen ia kaba phi la pyndep.",
+                night: "Phi la pyndep bha mynta. Thiah suk bad pynkhreh na ka bynta lashai."
+              },
+              Mizo: {
+                morning: "Zing chibai! Hlim tak leh zawi zawiin i ni hmang tan rawh.",
+                afternoon: "I ti tha hle mai. Hma lam pan zel rawh, a pawimawh vek a ni.",
+                evening: "I ni hman a zo tep ta. Hahdam takin thil tha zawng ti zo rawh.",
+                night: "Vawiin hian hma i sawn e. Hahdam takin muhil rawh."
+              },
+              Nagamese: {
+                morning: "Aji morning! Hahi kora logote din toh chuto step pora suru koribi.",
+                afternoon: "Apuni bhal pora korise. Agefalte jaikena thakibi.",
+                evening: "Aji laga din khotom hobole ase. Aram koribi aru kushi thakibi.",
+                night: "Aji apuni bhal progress korise. Bhal pora ghumi jabi."
+              },
+              Tripuri: {
+                morning: "Phrung khulumkha! Salno chokhi hahima bai chukhi step bai chhengdi.",
+                afternoon: "Nini samung bhal tongkha. Ulung chhengdi.",
+                evening: "Aphi khulumkha! Aram khamdi bai nini samungno kmen khailadi.",
+                night: "Hor khulumkha! Bhal pora thiahdi bai nini progressno chokhichangdi."
+              }
+            };
+
+            const progressAwareTextMap: Record<string, { allDone: string; partial: string; zero: string }> = {
+              English: {
+                allDone: "Excellent work today! You've completed all your reminders.",
+                partial: "You're making steady progress today. Keep going!",
+                zero: "Every day starts with one small step. Complete your first activity when ready."
+              },
+              Hindi: {
+                allDone: "बहुत बढ़िया! आपने आज के सभी रिमाइंडर्स पूरे कर लिए हैं।",
+                partial: "आप आज लगातार प्रगति कर रहे हैं। आगे बढ़ते रहें!",
+                zero: "हर दिन एक छोटे कदम से शुरू होता है। तैयार होने पर पहला काम पूरा करें।"
+              },
+              Bengali: {
+                allDone: "চমৎকার কাজ! আপনি আজকের সমস্ত কাজ সম্পন্ন করেছেন।",
+                partial: "আপনি আজ চমৎকার অগ্রগতি করছেন। এগিয়ে যান!",
+                zero: "প্রতিটি দিন একটি ছোট পদক্ষেপে শুরু হয়। প্রস্তুত হলে প্রথম কাজটি করুন।"
+              },
+              Assamese: {
+                allDone: "বৰ ধুনীয়া! আপুনি আজিৰ সকলো অনুস্মাৰক সম্পূৰ্ণ কৰিলে।",
+                partial: "আপুনি আজি ধাৰাবাহিকভাৱে আগবাঢ়িছে। এইদৰেই চলাই যাওক!",
+                zero: "প্ৰতিটো দিনেই এটা সৰু পদক্ষেপেৰে আৰম্ভ হয়। সাজু হ’লে প্ৰথম কামটো কৰক।"
+              },
+              Manipuri: {
+                allDone: "য়াম্না ফরে! ঙসিগী রিমাইন্দর পুম্নমক লোইশিনখ্রে।",
+                partial: "নহাক ঙসি মাংলোমদা ফোজনা চংশিল্লি। লেপ্তনা তৌবীয়ু!",
+                zero: "নুমিত খুদিংমক অপীকপা অমদগী হৌগনি। অহানবা থবক লোইশিনবীয়ু।"
+              },
+              Khasi: {
+                allDone: "Kaba kordor! Phi la pyndep ia baroh ki jingpynkynmaw mynta.",
+                partial: "Phi nang pyndep ia ki kam jong phi. Nang iaid shaphrang!",
+                zero: "Man ka sngi ka sdang da uwei u kynja. Pyndep ia ka kam nyngkong."
+              },
+              Mizo: {
+                allDone: "A va tha em! Vawiin hriattirna zawng zawng i ti zo ta.",
+                partial: "I ti tha hle mai! Vawiin hian hma i sawn zel e.",
+                zero: "Ni tin hi bul tan thar a ni. I inpeih hunah a hmasa ber hi ti zo rawh."
+              },
+              Nagamese: {
+                allDone: "Bhal hoise! Aji laga sob reminder khotom hoise.",
+                partial: "Bhal hoise! Apuni aji bhal progress korise.",
+                zero: "Sob din ekta chuto step pora suru hoye. Taiyar hoile start koribi."
+              },
+              Tripuri: {
+                allDone: "Bhal tongkha! Aji nini jotoni reminder complete khailamkha.",
+                partial: "Bhal tongkha! Nini progress aji phungtongkha.",
+                zero: "Sal chhi khai step bai chhengkha. Tayar chhi khai skangni reminder khamdi."
+              }
+            };
+
+            const tipMap: Record<string, string> = {
+              English: "Tip: Drinking water and taking short walks keeps your memory sharp and mind active.",
+              Hindi: "सुझाव: पानी पीना और छोटी सैर करना आपकी याददाश्त को तेज और दिमाग को सक्रिय रखता है।",
+              Bengali: "টিপস: পর্যাপ্ত জল খাওয়া এবং কিছুক্ষণ হাঁটা আপনার স্মৃতিশক্তি প্রখর রাখে।",
+              Assamese: "পৰামৰ্শ: পানী খোৱা আৰু অলপ খোজ কঢ়াটোৱে মগজু সজীৱ আৰু স্মৰণশক্তি চোকা ৰাখে।",
+              Manipuri: "পাউতাক: ঈশিং থকপা অমসুং খোঙনা চৎপনা নীংশিংফম অমসুং লৌশিং ফহনগনি।",
+              Khasi: "Jingmut: Dih um bad iaiaid khyndiat pynkhlain ia ka jingkynmaw jong phi.",
+              Mizo: "Thurawn: Tui in tam leh kea kal hi hriatrengna atan a tha hle a ni.",
+              Nagamese: "Tip: Pani khabi aru olop berale apuni laga memory bhal thakibo.",
+              Tripuri: "Tip: Twi thungmung bai re-mung nini chokhichangno bhal khamdi."
+            };
+
+            const langTimeMap = primaryMotivationMap[language] || primaryMotivationMap.English;
+            const langProgressMap = progressAwareTextMap[language] || progressAwareTextMap.English;
+            const tipText = tipMap[language] || tipMap.English;
+
+            let primaryMessage = langTimeMap[period];
+            if (totalCount > 0) {
+              if (completedCount === totalCount) {
+                primaryMessage = langProgressMap.allDone;
+              } else if (completedCount > 0) {
+                primaryMessage = langProgressMap.partial;
+              } else {
+                primaryMessage = langProgressMap.zero;
+              }
+            }
+
+            const PeriodIcon = period === 'morning' ? Sun : period === 'afternoon' ? Sunrise : period === 'evening' ? Sunset : Moon;
+
+            return (
+              <>
+                {/* Motivation Card 1: Time & Progress Awareness */}
+                <div className="bg-gradient-to-br from-amber-50/95 via-orange-50/70 to-amber-100/80 p-5 sm:p-6 rounded-3xl border border-amber-200/90 shadow-sm flex flex-col justify-between transition-all duration-300">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg sm:text-xl font-bold text-amber-950 flex items-center gap-2">
+                        <PeriodIcon className="w-6 h-6 text-amber-600 flex-shrink-0" />
+                        <span>{t('home.motivationTitle')}</span>
+                      </h3>
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-amber-200/70 text-amber-900 border border-amber-300/80 px-2.5 py-0.5 rounded-full">
+                        {period}
+                      </span>
+                    </div>
+                    <p className="text-amber-950 font-extrabold text-base sm:text-lg leading-relaxed">
+                      "{primaryMessage}"
+                    </p>
+                  </div>
+                  <div className="flex justify-end mt-4">
+                    <SVGMotivation className="w-14 h-14 text-amber-500 opacity-80" />
+                  </div>
+                </div>
+
+                {/* Motivation Card 2: Supportive Mind & Memory Tip */}
+                <div className="bg-gradient-to-br from-emerald-50/95 via-teal-50/70 to-emerald-100/80 p-5 sm:p-6 rounded-3xl border border-emerald-200/90 shadow-sm flex flex-col justify-between transition-all duration-300">
+                  <div>
+                    <h4 className="text-base sm:text-lg font-extrabold text-emerald-950 mb-2 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                      <span>{language === 'Hindi' ? 'दैनिक सुझाव' : language === 'Bengali' ? 'দৈনিক টিপস' : language === 'Assamese' ? 'দৈনিক পৰামৰ্শ' : 'Daily Mind Tip'}</span>
+                    </h4>
+                    <p className="text-emerald-900 font-bold text-sm sm:text-base leading-relaxed">
+                      {tipText}
+                    </p>
+                  </div>
+                  <div className="flex justify-end mt-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-200/70 text-emerald-800 flex items-center justify-center border border-emerald-300/80">
+                      <Heart className="w-5 h-5 fill-emerald-600 text-emerald-600" />
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+
+      </div>
+
+      {/* Mind Garden Section - Placed directly below Today's Reminders + Daily Motivation */}
+      <div className="mt-8">
+        <MindGarden />
       </div>
 
       {activeNotification && (() => {
         const nt = localNotificationTranslations[language] || localNotificationTranslations.English;
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-navy bg-opacity-50 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border-2 border-brand-purple animate-scale-up space-y-6">
-              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-brand-purpleLight text-brand-purple mx-auto animate-bounce">
-                <Bell className="w-9 h-9" />
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[92vw] max-w-md animate-slide-down bg-white/95 backdrop-blur-md border-2 border-brand-purpleLight rounded-2xl p-4 shadow-xl shadow-brand-navy/15 flex flex-col gap-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-brand-purpleLight text-brand-purple">
+                <Bell className="w-6 h-6 animate-bounce" />
               </div>
               
-              <div className="text-center space-y-2">
-                <h2 className="text-2xl font-black text-brand-navy">
-                  {activeNotification.category === 'medicine' ? nt.medicineTitle :
-                   activeNotification.category === 'hydration' ? nt.hydrationTitle :
-                   activeNotification.category === 'meals' ? nt.mealsTitle :
-                   activeNotification.category === 'exercise' ? nt.exerciseTitle : nt.reminderTitle}
-                </h2>
-                <h3 className="text-xl font-extrabold text-brand-purple">{activeNotification.title}</h3>
-                <p className="text-brand-grayText font-bold text-base">
+              <div className="flex-1 min-w-0 pr-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-brand-purple">
+                    {activeNotification.category === 'medicine' ? nt.medicineTitle :
+                     activeNotification.category === 'hydration' ? nt.hydrationTitle :
+                     activeNotification.category === 'meals' ? nt.mealsTitle :
+                     activeNotification.category === 'exercise' ? nt.exerciseTitle : nt.reminderTitle}
+                  </span>
+                  <span className="text-xs font-bold text-brand-grayText">
+                    {activeNotification.time}
+                  </span>
+                </div>
+                <h3 className="text-base font-extrabold text-brand-navy truncate mt-0.5">{activeNotification.title}</h3>
+                <p className="text-xs text-brand-grayText font-semibold line-clamp-2 mt-0.5">
                   {activeNotification.category === 'medicine' ? nt.medicineDesc :
                    activeNotification.category === 'hydration' ? nt.hydrationDesc :
                    activeNotification.category === 'exercise' ? nt.exerciseDesc :
@@ -1914,29 +2388,30 @@ export const Home: React.FC = () => {
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={() => handleNotificationComplete(activeNotification)}
-                  className="w-full py-4 bg-brand-green text-white font-extrabold rounded-2xl hover:bg-opacity-90 active:scale-[0.98] transition-all text-lg shadow-md"
-                >
-                  {nt.markAsDone}
-                </button>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => handleNotificationSnooze(activeNotification, 10)}
-                    className="py-3 bg-brand-lavender text-brand-purple font-extrabold rounded-2xl hover:bg-brand-purple hover:text-white active:scale-[0.98] transition-all text-sm"
-                  >
-                    {nt.remindMeLater}
-                  </button>
-                  <button
-                    onClick={() => handleNotificationDismiss(activeNotification)}
-                    className="py-3 bg-brand-redBg text-brand-red font-extrabold rounded-2xl hover:bg-brand-red hover:text-white active:scale-[0.98] transition-all text-sm"
-                  >
-                    {nt.dismiss}
-                  </button>
-                </div>
-              </div>
+              <button
+                onClick={() => handleNotificationDismiss(activeNotification)}
+                className="flex-shrink-0 text-brand-grayText hover:text-brand-navy p-1 rounded-lg transition-colors"
+                title={nt.dismiss}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2 border-t border-brand-purpleLight/40">
+              <button
+                onClick={() => handleNotificationComplete(activeNotification)}
+                className="flex-1 py-2.5 bg-brand-green text-white font-extrabold rounded-xl hover:bg-opacity-90 active:scale-[0.98] transition-all text-xs shadow-sm flex items-center justify-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                {nt.markAsDone}
+              </button>
+              
+              <button
+                onClick={() => handleNotificationSnooze(activeNotification, 10)}
+                className="px-3.5 py-2.5 bg-brand-lavender text-brand-purple font-extrabold rounded-xl hover:bg-brand-purple hover:text-white active:scale-[0.98] transition-all text-xs"
+              >
+                {nt.remindMeLater}
+              </button>
             </div>
           </div>
         );

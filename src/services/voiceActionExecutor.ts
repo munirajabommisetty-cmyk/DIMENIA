@@ -587,14 +587,49 @@ export const voiceActionExecutor = {
         };
       }
 
-      // 11. NAVIGATION
+      // 11. NAVIGATION & FEATURE ROUTING
+      const isTaskStatusIntent = (
+        intent === 'MY_DAY_QUERY' ||
+        intent === 'MY_DAY_STATUS' ||
+        intent === 'NEXT_TASK_QUERY' ||
+        intent === 'TASK_STATUS_QUERY' ||
+        intent === 'MOTIVATION_SUPPORT'
+      );
+      const isReminderQueryIntent = (
+        intent === 'REMINDER_QUERY' ||
+        intent === 'MEDICATION_SCHEDULE_QUERY'
+      );
+      const isGamesQueryIntent = (
+        intent === 'BRAIN_GAME_RECOMMENDATION' ||
+        intent === 'COGNITIVE_PERFORMANCE_QUERY' ||
+        intent === 'BRAIN_GAME_PERFORMANCE_QUERY' ||
+        intent === 'PLAY_GAME' ||
+        intent.startsWith('OPEN_MEMORY_MATCH') ||
+        intent.startsWith('OPEN_SEQUENCE')
+      );
+      const isMemoriesQueryIntent = (
+        intent === 'OPEN_MEMORIES' ||
+        intent === 'MEMORY_QUERY'
+      );
+
       if (
         intent === 'NAVIGATION' || 
         intent.startsWith('OPEN_') || 
         intent === 'PLAY_GAME' ||
+        isTaskStatusIntent ||
+        isReminderQueryIntent ||
+        isGamesQueryIntent ||
+        isMemoriesQueryIntent ||
         !!parsed.path
       ) {
         let targetPath = parsed.path || parameters.target || (parsed.parameters && parsed.parameters.target);
+        if (!targetPath || targetPath.trim() === '') {
+          if (isTaskStatusIntent) targetPath = '/day';
+          else if (isReminderQueryIntent) targetPath = '/reminders';
+          else if (isGamesQueryIntent) targetPath = '/games';
+          else if (isMemoriesQueryIntent) targetPath = '/memories';
+        }
+
         if (targetPath) {
           const canonicalMap: Record<string, string> = {
             home: '/',
@@ -638,9 +673,23 @@ export const voiceActionExecutor = {
           } else if (canonicalMap[targetPath.toLowerCase().trim()]) {
             finalRoute = canonicalMap[targetPath.toLowerCase().trim()];
           }
+
+          console.log(`[VOICE] intent: ${intent}`);
+          console.log(`[VOICE] resolved navigation path: ${finalRoute}`);
+          console.log(`[VOICE] navigating to ${finalRoute}`);
           console.log(`[ActionExecutor] NAVIGATION targetPath resolved to: ${finalRoute}`);
-          callbacks.navigate(finalRoute, parsed.gameId ? { gameId: parsed.gameId } : undefined);
-          return { nextContext: null };
+
+          const navState: Record<string, any> = {};
+          if (parsed.gameId) navState.gameId = parsed.gameId;
+          if (parsed.selectedMemoryId) navState.selectedMemoryId = parsed.selectedMemoryId;
+          if (parsed.memoryData) navState.memoryData = parsed.memoryData;
+          if (parsed.highlightTaskId) navState.highlightTaskId = parsed.highlightTaskId;
+
+          callbacks.navigate(finalRoute, Object.keys(navState).length > 0 ? navState : undefined);
+          return {
+            nextContext: null,
+            responseOverride: parsed.response
+          };
         }
       }
 

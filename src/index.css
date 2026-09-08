@@ -114,3 +114,142 @@ input, textarea, select {
 input::placeholder, textarea::placeholder {
   color: #64748b !important;
 }
+
+/* ============================================================
+   CAREGIVER DASHBOARD DESIGN SYSTEM & ANIMATIONS
+   (Strictly scoped under .caregiver-dashboard to protect Patient UI)
+   ============================================================ */
+
+@keyframes cgShimmerBorder {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes cgRotateConic {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes cgSubtleFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes cgGlowPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.caregiver-dashboard {
+  --cg-primary-navy: #0f2942;
+  --cg-accent-blue: #0284c7;
+  --cg-accent-cyan: #06b6d4;
+  --cg-accent-indigo: #4f46e5;
+  --cg-accent-purple: #9333ea;
+  --cg-accent-emerald: #10b981;
+}
+
+/* Caregiver Card Container with subtle elevation & border blur */
+.caregiver-dashboard .cg-card {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(226, 232, 240, 0.88);
+  box-shadow: 0 4px 22px -2px rgba(15, 41, 66, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.caregiver-dashboard .cg-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px -4px rgba(2, 132, 199, 0.14);
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
+/* Shining / Travelling Light Border Accent for Key Cards */
+.caregiver-dashboard .cg-shimmer-border {
+  position: relative;
+  background: #ffffff;
+  border-radius: 1.5rem;
+  z-index: 1;
+}
+
+.caregiver-dashboard .cg-shimmer-border::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: 1.6rem;
+  background: linear-gradient(120deg, rgba(2, 132, 199, 0.25), rgba(99, 102, 241, 0.4), rgba(6, 182, 212, 0.25), rgba(147, 51, 234, 0.25));
+  background-size: 300% 300%;
+  animation: cgShimmerBorder 8s ease infinite;
+  z-index: -1;
+  opacity: 0.85;
+}
+
+/* High-End Conic Rotating Border Shimmer for Primary Cards */
+.caregiver-dashboard .cg-conic-shimmer {
+  position: relative;
+  border-radius: 1.5rem;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.caregiver-dashboard .cg-conic-shimmer::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(2, 132, 199, 0.35) 0deg,
+    rgba(79, 70, 229, 0.45) 120deg,
+    rgba(6, 182, 212, 0.35) 240deg,
+    rgba(2, 132, 199, 0.35) 360deg
+  );
+  animation: cgRotateConic 12s linear infinite;
+  z-index: -1;
+  opacity: 0.85;
+}
+
+/* Subtle Floating Animation Utility */
+.caregiver-dashboard .cg-subtle-float {
+  animation: cgSubtleFloat 4s ease-in-out infinite;
+}
+
+.caregiver-dashboard .cg-glow-pulse {
+  animation: cgGlowPulse 3s ease-in-out infinite;
+}
+
+/* Accessibility: Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .caregiver-dashboard .cg-shimmer-border::before,
+  .caregiver-dashboard .cg-conic-shimmer::before,
+  .caregiver-dashboard .cg-subtle-float,
+  .caregiver-dashboard .cg-glow-pulse {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+

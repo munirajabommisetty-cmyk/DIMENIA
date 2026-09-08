@@ -11,3 +11,5 @@
 - [x] Complete localization dictionaries for all NER local languages
 - [x] Persistent settings saved in storage service
 - [x] Validated project build passes successfully (`npm run build`)
+
+

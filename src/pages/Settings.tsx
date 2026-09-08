@@ -132,15 +132,15 @@ const setTranslations: Record<string, Record<string, string>> = {
     importInvalid: 'Etu file toh thik backup nohoi.',
     importSuccess: 'Import hoise! Reload kuri ase...',
     textScalingDesc: 'Akhar khan laga size chutu-dangor kuribi.',
-    textNormal: 'Normal',
+    textNormal: 'Sadharon',
     textLarge: 'Dangor',
     textExtraLarge: 'Bisi dangor',
     dbLocallyDesc: 'Apuni laga data device te save hoikena ase.',
     privacyNotice: 'Etu Second Brain apuni laga local device te he chole. Cloud te kuila save nohoi.',
-    profileSession: 'Profile Session',
+    profileSession: 'Profile Samay',
     logoutDesc: 'Lout out kuribi. Apuni laga yaad aro schedule delete nohoibo.',
     logoutConfirm: 'Log out kuribole mon ase na?',
-    logoutBtn: 'Log out Profile'
+    logoutBtn: 'Profile Out Kuribi'
   },
   Tripuri: {
     deleteConfirm: 'Jotoni delete khailani?',
@@ -154,10 +154,10 @@ const setTranslations: Record<string, Record<string, string>> = {
     textExtraLarge: 'Bisi chokh',
     dbLocallyDesc: 'Nini data offline device te tongkhase.',
     privacyNotice: 'Second Brain nini local machine te he chole. Cloud server te chichi phai tongya.',
-    profileSession: 'Profile Session',
+    profileSession: 'Profile Kok',
     logoutDesc: 'Log out khamdi. Yaad chichi delete khailakhai.',
     logoutConfirm: 'Log out khailani?',
-    logoutBtn: 'Log out Profile'
+    logoutBtn: 'Profile Log Out Khaimani'
   }
 };
 
@@ -206,50 +206,64 @@ export const Settings: React.FC<SettingsProps> = ({ onSettingsChange, onLogout }
     { code: 'Tripuri', label: 'Kokborok / Tripuri' }
   ];
 
+  const currentUser = storageService.getCurrentUser();
+  const isCaregiver = currentUser?.role === 'Caregiver';
+
   return (
-    <div className="max-w-3xl mx-auto pb-12 space-y-6">
+    <div className={`max-w-3xl mx-auto pb-12 space-y-6 ${isCaregiver ? 'caregiver-dashboard caregiver-settings' : ''}`}>
       {/* Header */}
-      <div className="flex items-center gap-2 border-b border-brand-purpleLight pb-4">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-xl hover:bg-white text-brand-purple transition-all">
+      <div className={`flex items-center gap-3 border-b pb-4 ${isCaregiver ? 'border-slate-200/80' : 'border-brand-purpleLight'}`}>
+        <button 
+          onClick={() => navigate(-1)} 
+          className={`p-2.5 rounded-2xl transition-all cursor-pointer ${
+            isCaregiver 
+              ? 'bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200' 
+              : 'hover:bg-white text-brand-purple'
+          }`}
+        >
           <ArrowLeft className="w-6 h-6" />
         </button>
         <div>
-          <h1 className="text-3xl font-extrabold text-brand-navy flex items-center gap-2">
-            {t('set.title')} <SettingsIcon className="w-8 h-8 text-brand-purple" />
+          <h1 className={`text-3xl font-black tracking-tight flex items-center gap-2.5 ${isCaregiver ? 'text-slate-900' : 'text-brand-navy'}`}>
+            {t('set.title')} <SettingsIcon className={`w-8 h-8 ${isCaregiver ? 'text-sky-600' : 'text-brand-purple'}`} />
           </h1>
-          <p className="text-brand-grayText font-medium mt-1">{t('set.subtitle')}</p>
+          <p className={`font-extrabold mt-1 ${isCaregiver ? 'text-slate-500' : 'text-brand-grayText'}`}>{t('set.subtitle')}</p>
         </div>
       </div>
 
       <div className="space-y-6">
         
         {/* Section 1: Accessibility Controls */}
-        <div className="bg-white p-6 rounded-3xl border border-brand-purpleLight shadow-sm space-y-6">
-          <h2 className="text-xl font-bold text-brand-navy flex items-center gap-2">
-            <Eye className="w-6 h-6 text-brand-purple" />
+        <div className={`p-6 sm:p-7 rounded-3xl space-y-6 shadow-sm ${isCaregiver ? 'cg-shimmer-border cg-card' : 'bg-white border border-brand-purpleLight'}`}>
+          <h2 className={`text-xl font-black flex items-center gap-2 ${isCaregiver ? 'text-slate-900' : 'text-brand-navy'}`}>
+            <Eye className={`w-6 h-6 ${isCaregiver ? 'text-sky-600' : 'text-brand-purple'}`} />
             <span>{t('set.accessibility')}</span>
           </h2>
 
-          <div className="space-y-6 divide-y divide-brand-purpleLight">
+          <div className={`space-y-6 divide-y ${isCaregiver ? 'divide-slate-100' : 'divide-brand-purpleLight'}`}>
             
             {/* Text size selector */}
-            <div className="pt-4 first:pt-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-extrabold text-lg text-brand-navy flex items-center gap-2">
-                  <Type className="w-5 h-5 text-brand-grayText" />
+            <div className="pt-4 first:pt-0 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <h3 className={`font-black text-lg flex items-center gap-2 ${isCaregiver ? 'text-slate-900' : 'text-brand-navy'}`}>
+                  <Type className={`w-5 h-5 flex-shrink-0 ${isCaregiver ? 'text-slate-500' : 'text-brand-grayText'}`} />
                   <span>{t('set.textSize')}</span>
                 </h3>
-                <p className="text-brand-grayText text-sm mt-0.5">{(setTranslations[language] || setTranslations.English).textScalingDesc}</p>
+                <p className={`text-sm mt-0.5 font-extrabold ${isCaregiver ? 'text-slate-500' : 'text-brand-grayText'}`}>{(setTranslations[language] || setTranslations.English).textScalingDesc}</p>
               </div>
-              <div className="flex bg-brand-lavender p-1 rounded-2xl border border-brand-purpleLight w-full sm:w-auto">
+              <div className={`flex flex-wrap sm:flex-nowrap p-1.5 rounded-2xl border w-full lg:w-auto min-w-0 flex-shrink-0 gap-1.5 ${isCaregiver ? 'bg-slate-100 border-slate-200' : 'bg-brand-lavender border-brand-purpleLight'}`}>
                 {(['normal', 'large', 'xlarge'] as const).map((size) => (
                   <button
                     key={size}
                     onClick={() => updateSetting('textSize', size)}
-                    className={`flex-1 sm:flex-none px-6 py-3 rounded-xl text-sm font-extrabold capitalize transition-all ${
+                    className={`flex-1 min-w-[85px] sm:min-w-[95px] px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black capitalize transition-all cursor-pointer text-center whitespace-normal break-words leading-tight ${
                       settings.textSize === size
-                        ? 'bg-brand-purple text-white shadow-sm'
-                        : 'text-brand-navy hover:text-brand-purple'
+                        ? (isCaregiver 
+                            ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-sm' 
+                            : 'bg-brand-purple text-white shadow-sm')
+                        : (isCaregiver 
+                            ? 'text-slate-700 hover:text-sky-700 hover:bg-slate-200/60' 
+                            : 'text-brand-navy hover:text-brand-purple')
                     }`}
                   >
                     {size === 'normal' && (setTranslations[language] || setTranslations.English).textNormal}
@@ -263,9 +277,9 @@ export const Settings: React.FC<SettingsProps> = ({ onSettingsChange, onLogout }
         </div>
 
         {/* Section 2: Regional NER Language Selection */}
-        <div className="bg-white p-6 rounded-3xl border border-brand-purpleLight shadow-sm space-y-6">
-          <h2 className="text-xl font-bold text-brand-navy flex items-center gap-2">
-            <Globe className="w-6 h-6 text-brand-purple" />
+        <div className={`p-6 sm:p-7 rounded-3xl space-y-6 shadow-sm ${isCaregiver ? 'cg-shimmer-border cg-card' : 'bg-white border border-brand-purpleLight'}`}>
+          <h2 className={`text-xl font-black flex items-center gap-2 ${isCaregiver ? 'text-slate-900' : 'text-brand-navy'}`}>
+            <Globe className={`w-6 h-6 ${isCaregiver ? 'text-sky-600' : 'text-brand-purple'}`} />
             <span>{t('set.language')}</span>
           </h2>
 
@@ -277,10 +291,14 @@ export const Settings: React.FC<SettingsProps> = ({ onSettingsChange, onLogout }
                   updateSetting('language', lang.code);
                   setLanguage(lang.code);
                 }}
-                className={`px-4 py-3.5 rounded-xl border text-sm font-bold text-center transition-all ${
+                className={`px-4 py-3.5 rounded-2xl border text-sm font-black text-center transition-all cursor-pointer ${
                   settings.language === lang.code
-                    ? 'bg-brand-purpleLight border-brand-purple text-brand-purple'
-                    : 'border-brand-purpleLight hover:bg-brand-lavender text-brand-navy'
+                    ? (isCaregiver 
+                        ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white border-transparent shadow-sm' 
+                        : 'bg-brand-purpleLight border-brand-purple text-brand-purple')
+                    : (isCaregiver 
+                        ? 'bg-slate-50/80 border-slate-200 hover:bg-sky-50 hover:border-sky-300 text-slate-800' 
+                        : 'border-brand-purpleLight hover:bg-brand-lavender text-brand-navy')
                 }`}
               >
                 {lang.label}
@@ -290,19 +308,21 @@ export const Settings: React.FC<SettingsProps> = ({ onSettingsChange, onLogout }
         </div>
 
         {/* Section 3: Data Management */}
-        <div className="bg-white p-6 rounded-3xl border border-brand-purpleLight shadow-sm space-y-6">
-          <h2 className="text-xl font-bold text-brand-navy flex items-center gap-2">
-            <Trash2 className="w-6 h-6 text-brand-red" />
+        <div className={`p-6 sm:p-7 rounded-3xl space-y-6 shadow-sm ${isCaregiver ? 'cg-shimmer-border cg-card' : 'bg-white border border-brand-purpleLight'}`}>
+          <h2 className={`text-xl font-black flex items-center gap-2 ${isCaregiver ? 'text-slate-900' : 'text-brand-navy'}`}>
+            <Trash2 className={`w-6 h-6 ${isCaregiver ? 'text-rose-600' : 'text-brand-red'}`} />
             <span>{t('set.data')}</span>
           </h2>
-          <p className="text-brand-grayText text-base">
+          <p className={`text-base font-extrabold ${isCaregiver ? 'text-slate-600' : 'text-brand-grayText'}`}>
             {(setTranslations[language] || setTranslations.English).dbLocallyDesc}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
             <button
               onClick={handleResetData}
-              className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-brand-red text-white hover:bg-opacity-95 font-bold transition-all shadow-sm"
+              className={`flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl text-white font-black transition-all shadow-sm cursor-pointer active:scale-95 ${
+                isCaregiver ? 'bg-rose-600 hover:bg-rose-700' : 'bg-brand-red hover:bg-opacity-95'
+              }`}
             >
               <RefreshCw className="w-5 h-5" />
               <span>{t('set.reset')}</span>
@@ -328,7 +348,9 @@ export const Settings: React.FC<SettingsProps> = ({ onSettingsChange, onLogout }
                 a.click();
                 URL.revokeObjectURL(url);
               }}
-              className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-brand-purple text-white hover:bg-opacity-95 font-bold transition-all shadow-sm"
+              className={`flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl text-white font-black transition-all shadow-sm cursor-pointer active:scale-95 ${
+                isCaregiver ? 'bg-gradient-to-r from-sky-600 to-indigo-600 hover:opacity-95' : 'bg-brand-purple hover:bg-opacity-95'
+              }`}
             >
               <span>{t('set.export')}</span>
             </button>
@@ -366,26 +388,32 @@ export const Settings: React.FC<SettingsProps> = ({ onSettingsChange, onLogout }
               />
               <label
                 htmlFor="import-file-input"
-                className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-brand-purpleLight text-brand-purple hover:bg-brand-purple hover:text-white cursor-pointer font-bold text-center transition-all shadow-sm"
+                className={`flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-black text-center transition-all shadow-sm cursor-pointer active:scale-95 ${
+                  isCaregiver 
+                    ? 'bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white border border-sky-200' 
+                    : 'bg-brand-purpleLight text-brand-purple hover:bg-brand-purple hover:text-white'
+                }`}
               >
                 <span>{t('set.import')}</span>
               </label>
             </div>
           </div>
 
-          <div className="bg-brand-lavender p-4 rounded-2xl border border-brand-purpleLight text-xs text-brand-grayText space-y-1">
-            <p className="font-extrabold text-brand-navy">{t('set.privacy')}</p>
-            <p>{(setTranslations[language] || setTranslations.English).privacyNotice}</p>
+          <div className={`p-4 rounded-2xl text-xs space-y-1 ${
+            isCaregiver ? 'bg-sky-50/80 border border-sky-200/80 text-slate-600' : 'bg-brand-lavender border border-brand-purpleLight text-brand-grayText'
+          }`}>
+            <p className={`font-black ${isCaregiver ? 'text-slate-900' : 'text-brand-navy'}`}>{t('set.privacy')}</p>
+            <p className="font-extrabold">{(setTranslations[language] || setTranslations.English).privacyNotice}</p>
           </div>
         </div>
 
         {/* Section 4: Profile Session */}
-        <div className="bg-white p-6 rounded-3xl border border-brand-purpleLight shadow-sm space-y-6">
-          <h2 className="text-xl font-bold text-brand-navy flex items-center gap-2">
-            <LogOut className="w-6 h-6 text-brand-red" />
+        <div className={`p-6 sm:p-7 rounded-3xl space-y-6 shadow-sm ${isCaregiver ? 'cg-shimmer-border cg-card' : 'bg-white border border-brand-purpleLight'}`}>
+          <h2 className={`text-xl font-black flex items-center gap-2 ${isCaregiver ? 'text-slate-900' : 'text-brand-navy'}`}>
+            <LogOut className={`w-6 h-6 ${isCaregiver ? 'text-rose-600' : 'text-brand-red'}`} />
             <span>{(setTranslations[language] || setTranslations.English).profileSession}</span>
           </h2>
-          <p className="text-brand-grayText text-base">
+          <p className={`text-base font-extrabold ${isCaregiver ? 'text-slate-600' : 'text-brand-grayText'}`}>
             {(setTranslations[language] || setTranslations.English).logoutDesc}
           </p>
           <button
@@ -399,7 +427,9 @@ export const Settings: React.FC<SettingsProps> = ({ onSettingsChange, onLogout }
                 }
               }
             }}
-            className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-brand-red text-white hover:bg-opacity-95 font-bold transition-all shadow-sm"
+            className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-white font-black transition-all shadow-sm cursor-pointer active:scale-95 ${
+              isCaregiver ? 'bg-rose-600 hover:bg-rose-700' : 'bg-brand-red hover:bg-opacity-95'
+            }`}
           >
             <LogOut className="w-5 h-5" />
             <span>{(setTranslations[language] || setTranslations.English).logoutBtn}</span>
@@ -410,3 +440,4 @@ export const Settings: React.FC<SettingsProps> = ({ onSettingsChange, onLogout }
     </div>
   );
 };
+

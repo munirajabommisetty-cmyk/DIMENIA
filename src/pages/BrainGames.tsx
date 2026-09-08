@@ -1,116 +1,212 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, RotateCcw, ArrowLeft, Trophy, Lock } from 'lucide-react';
+import { CheckCircle, RotateCcw, ArrowLeft, Trophy, Lock, Target, Flame, Info, ArrowRight } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import type { GameScore } from '../data/demoData';
 import { apiClient } from '../services/apiClient';
 import { useLanguage } from '../context/LanguageContext';
 import { getDailyCognitiveSelection } from '../data/northeastCognitiveDataset';
+import { SVGBrain } from '../components/SVGIcons';
 
-// Custom SVGs matching the visual style of reference image
-const SVGBrainGame = ({ className = "w-10 h-10 flex-shrink-0" }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1 0-3.12 3 3 0 0 1 0-4.88 2.5 2.5 0 0 1 0-3.12A2.5 2.5 0 0 1 9.5 2Z" fill="#d8b4fe" stroke="#5B5BD6" />
-    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 0-3.12 3 3 0 0 0 0-4.88 2.5 2.5 0 0 0 0-3.12A2.5 2.5 0 0 0 14.5 2Z" fill="#e9d5ff" stroke="#5B5BD6" />
+// Custom SVGs matching the exact visual style of reference image
+const SVGBrainGame = ({ className = "w-12 h-12 flex-shrink-0" }) => (
+  <svg viewBox="0 0 48 48" fill="none" className={className}>
+    {/* Background Glow */}
+    <circle cx="24" cy="24" r="22" fill="#f3e8ff" />
+    
+    {/* Back Card (Tilted Purple Card) */}
+    <g transform="rotate(-12 24 24)">
+      <rect x="14" y="10" width="20" height="26" rx="4" fill="#a855f7" stroke="#7e22ce" strokeWidth="1.5" />
+      <circle cx="24" cy="23" r="5" fill="#c084fc" />
+    </g>
+    
+    {/* Front Card (Main Violet Card with Heart) */}
+    <g transform="rotate(6 24 24)">
+      <rect x="15" y="11" width="20" height="26" rx="4" fill="#7c3aed" stroke="#5b21b6" strokeWidth="1.5" />
+      {/* Heart Symbol */}
+      <path d="M25 19 C25 17 23 16 21.5 17.5 C20 16 18 17 18 19 C18 21.5 21.5 24 21.5 24 C21.5 24 25 21.5 25 19 Z" fill="#ffffff" />
+      {/* Top Left Mini Accent */}
+      <circle cx="18" cy="14" r="1" fill="#ddd6fe" />
+    </g>
   </svg>
 );
 
-const SVGSequenceGame = ({ className = "w-10 h-10 flex-shrink-0" }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className}>
-    {/* Box 1 (Blue) */}
-    <rect x="2" y="14" width="7" height="7" rx="1.5" fill="#3b82f6" stroke="#2563eb" strokeWidth="1.5" />
-    <text x="5.5" y="19.5" fill="#ffffff" fontSize="5" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">1</text>
+const SVGSequenceGame = ({ className = "w-12 h-12 flex-shrink-0" }) => (
+  <svg viewBox="0 0 48 48" fill="none" className={className}>
+    {/* Background Glow */}
+    <circle cx="24" cy="24" r="22" fill="#ccfbf1" />
     
-    {/* Box 2 (Green) */}
-    <rect x="8" y="7" width="7" height="7" rx="1.5" fill="#22c55e" stroke="#16a34a" strokeWidth="1.5" />
-    <text x="11.5" y="12.5" fill="#ffffff" fontSize="5" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">2</text>
+    {/* Block 1 (Teal) */}
+    <rect x="6" y="26" width="12" height="14" rx="3" fill="#0d9488" stroke="#0f766e" strokeWidth="1.5" />
+    <text x="12" y="35" fill="#ffffff" fontSize="9" fontWeight="900" textAnchor="middle" dominantBaseline="middle">1</text>
     
-    {/* Box 3 (Orange/Yellow) */}
-    <rect x="15" y="2" width="7" height="7" rx="1.5" fill="#f59e0b" stroke="#d97706" strokeWidth="1.5" />
-    <text x="18.5" y="7.5" fill="#ffffff" fontSize="5" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">3</text>
+    {/* Block 2 (Emerald) */}
+    <rect x="18" y="18" width="12" height="14" rx="3" fill="#10b981" stroke="#047857" strokeWidth="1.5" />
+    <text x="24" y="27" fill="#ffffff" fontSize="9" fontWeight="900" textAnchor="middle" dominantBaseline="middle">2</text>
     
-    {/* Arrow/Line */}
-    <path d="M5.5 14 Q11.5 14 11.5 7" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="2 2" fill="none" />
-    <path d="M11.5 7 Q18.5 7 18.5 2" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="2 2" fill="none" />
+    {/* Block 3 (Bright Green) */}
+    <rect x="30" y="10" width="12" height="14" rx="3" fill="#22c55e" stroke="#15803d" strokeWidth="1.5" />
+    <text x="36" y="19" fill="#ffffff" fontSize="9" fontWeight="900" textAnchor="middle" dominantBaseline="middle">3</text>
+    
+    {/* Connecting Progression Arrow */}
+    <path d="M12 24 C18 20 18 16 24 16 C30 16 30 10 36 8" stroke="#059669" strokeWidth="2" strokeDasharray="3 2" fill="none" strokeLinecap="round" />
   </svg>
 );
 
-const SVGAttentionGame = ({ className = "w-10 h-10 flex-shrink-0" }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className}>
-    {/* Magnifying glass handle */}
-    <line x1="16" y1="16" x2="22" y2="22" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" />
+const SVGAttentionGame = ({ className = "w-12 h-12 flex-shrink-0" }) => (
+  <svg viewBox="0 0 48 48" fill="none" className={className}>
+    {/* Background Glow */}
+    <circle cx="24" cy="24" r="22" fill="#ffedd5" />
     
-    {/* Glass rim */}
-    <circle cx="10" cy="10" r="7" fill="#d1fae5" stroke="#10b981" strokeWidth="2" />
+    {/* Card 1 (Normal Image Card) */}
+    <rect x="7" y="12" width="15" height="24" rx="3" fill="#ffffff" stroke="#fb923c" strokeWidth="1.5" />
+    <circle cx="14.5" cy="20" r="3.5" fill="#f97316" />
+    <path d="M10 30 L13 25 L16 28 L19 23 L20 30 Z" fill="#fdba74" />
     
-    {/* Eye drawing inside lens */}
-    <path d="M6 10 C7.5 7.5 12.5 7.5 14 10 C12.5 12.5 7.5 12.5 6 10 Z" fill="#ffffff" stroke="#10b981" strokeWidth="1" />
-    <circle cx="10" cy="10" r="2.5" fill="#047857" />
-    <circle cx="11" cy="9" r="0.75" fill="#ffffff" />
+    {/* Card 2 (Spot Difference Image Card with highlight ring) */}
+    <rect x="26" y="12" width="15" height="24" rx="3" fill="#ffffff" stroke="#ea580c" strokeWidth="2" />
+    <circle cx="33.5" cy="20" r="3.5" fill="#ea580c" />
+    <path d="M29 30 L32 25 L35 28 L38 23 L39 30 Z" fill="#fdba74" />
+    
+    {/* Difference Spot Light Pulse */}
+    <circle cx="33.5" cy="20" r="6" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="2 2" fill="none" />
+    <path d="M37.5 13.5 L41.5 9.5" stroke="#ea580c" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
 
-const SVGObjectGame = ({ className = "w-10 h-10 flex-shrink-0" }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className}>
-    {/* Outer Blue Ring */}
-    <circle cx="12" cy="12" r="10" fill="#e0f2fe" stroke="#0284c7" strokeWidth="2" />
-    {/* Middle Red Ring */}
-    <circle cx="12" cy="12" r="6" fill="#fee2e2" stroke="#ef4444" strokeWidth="2" />
-    {/* Center Bullseye */}
-    <circle cx="12" cy="12" r="2.5" fill="#ef4444" />
+const SVGObjectGame = ({ className = "w-12 h-12 flex-shrink-0" }) => (
+  <svg viewBox="0 0 48 48" fill="none" className={className}>
+    {/* Background Glow */}
+    <circle cx="24" cy="24" r="22" fill="#e0f2fe" />
     
-    {/* Arrow */}
-    <line x1="2" y1="2" x2="9.5" y2="9.5" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" />
-    <polygon points="9.5,6.5 9.5,9.5 6.5,9.5" fill="#1e293b" />
+    {/* Target Object Below Lens (Star) */}
+    <polygon points="20,12 22,17 27,17 23,20 25,25 20,22 15,25 17,20 13,17 18,17" fill="#fbbf24" stroke="#d97706" strokeWidth="1" />
+    
+    {/* Magnifying Glass Lens */}
+    <circle cx="22" cy="20" r="11" fill="#38bdf8" fillOpacity="0.3" stroke="#0284c7" strokeWidth="2.5" />
+    {/* Glass Rim Glare */}
+    <path d="M15 15 A8 8 0 0 1 27 15" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
+    
+    {/* Handle */}
+    <line x1="30" y1="28" x2="40" y2="38" stroke="#0369a1" strokeWidth="4.5" strokeLinecap="round" />
+    <line x1="30" y1="28" x2="40" y2="38" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
 
-const SVGRoutineGame = ({ className = "w-10 h-10 flex-shrink-0" }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className}>
-    {/* Clipboard body */}
-    <rect x="4" y="4" width="13" height="17" rx="2" fill="#fef3c7" stroke="#d97706" strokeWidth="1.5" />
+const SVGRoutineGame = ({ className = "w-12 h-12 flex-shrink-0" }) => (
+  <svg viewBox="0 0 48 48" fill="none" className={className}>
+    {/* Background Glow */}
+    <circle cx="24" cy="24" r="22" fill="#ffe4e6" />
     
-    {/* Clip */}
-    <path d="M8 4.5 C8 3.5 13 3.5 13 4.5" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" />
-    <rect x="9" y="3" width="4" height="2" rx="0.5" fill="#f59e0b" stroke="#d97706" strokeWidth="1" />
+    {/* Calendar Card Body */}
+    <rect x="10" y="10" width="28" height="30" rx="4" fill="#ffffff" stroke="#f43f5e" strokeWidth="2" />
+    {/* Top Pink Banner */}
+    <path d="M10 14 C10 11.7 11.7 10 14 10 H34 C36.3 10 38 11.7 38 14 V18 H10 V14 Z" fill="#fb7185" />
     
-    {/* Checklist lines and checkmarks */}
-    <line x1="9" y1="9" x2="14" y2="9" stroke="#92400e" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M6 9 L7 10 L8.5 8" fill="none" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    {/* Spiral Rings */}
+    <rect x="16" y="7" width="2.5" height="6" rx="1" fill="#9f1239" />
+    <rect x="29.5" y="7" width="2.5" height="6" rx="1" fill="#9f1239" />
     
-    <line x1="9" y1="13" x2="14" y2="13" stroke="#92400e" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M6 13 L7 14 L8.5 12" fill="none" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    {/* Checkmarks List */}
+    <path d="M15 24 L18 27 L23 21" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    <line x1="26" y1="24" x2="33" y2="24" stroke="#e11d48" strokeWidth="2" strokeLinecap="round" />
     
-    {/* Clock overlay */}
-    <circle cx="17" cy="17" r="5" fill="#e0f2fe" stroke="#0284c7" strokeWidth="1.5" />
-    <path d="M17 14.5 V17 L18.5 18" stroke="#0284c7" strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M15 32 L18 35 L23 29" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    <line x1="26" y1="32" x2="33" y2="32" stroke="#e11d48" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
 
-const SVGLanguageGame = ({ className = "w-10 h-10 flex-shrink-0" }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className}>
-    {/* Book pages (left & right sides) */}
-    <path d="M2 18 C5 16 9 16 12 18 C15 16 19 16 22 18 V6 C19 4 15 4 12 6 C9 4 5 4 2 6 Z" fill="#eff6ff" stroke="#2563eb" strokeWidth="1.5" strokeLinejoin="round" />
+const SVGLanguageGame = ({ className = "w-12 h-12 flex-shrink-0" }) => (
+  <svg viewBox="0 0 48 48" fill="none" className={className}>
+    {/* Background Glow */}
+    <circle cx="24" cy="24" r="22" fill="#dbeafe" />
     
-    {/* Book spine line */}
-    <line x1="12" y1="6" x2="12" y2="18" stroke="#2563eb" strokeWidth="1.5" />
+    {/* Open Blue Book Cover & Pages */}
+    <path d="M6 34 C12 30 19 30 24 33 C29 30 36 30 42 34 V16 C36 12 29 12 24 15 C19 12 12 12 6 16 Z" fill="#ffffff" stroke="#2563eb" strokeWidth="2" strokeLinejoin="round" />
     
-    {/* Page text lines */}
-    <line x1="5" y1="9" x2="9" y2="9" stroke="#93c5fd" strokeWidth="1" strokeLinecap="round" />
-    <line x1="5" y1="12" x2="9" y2="12" stroke="#93c5fd" strokeWidth="1" strokeLinecap="round" />
+    {/* Book Spine */}
+    <line x1="24" y1="15" x2="24" y2="33" stroke="#1d4ed8" strokeWidth="2" />
     
-    <line x1="15" y1="9" x2="19" y2="9" stroke="#93c5fd" strokeWidth="1" strokeLinecap="round" />
-    <line x1="15" y1="12" x2="19" y2="12" stroke="#93c5fd" strokeWidth="1" strokeLinecap="round" />
+    {/* Left Page Text Lines */}
+    <line x1="11" y1="20" x2="19" y2="20" stroke="#93c5fd" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="11" y1="24" x2="19" y2="24" stroke="#93c5fd" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="11" y1="28" x2="17" y2="28" stroke="#93c5fd" strokeWidth="1.5" strokeLinecap="round" />
     
-    {/* Sparkles / stars above book */}
-    <path d="M6 3 L6.5 4 L7.5 4.5 L6.5 5 L6 6 L5.5 5 L4.5 4.5 L5.5 4 Z" fill="#f59e0b" />
-    <path d="M18 2 L18.5 3 L19.5 3.5 L18.5 4 L18 5 L17.5 4 L16.5 3.5 L17.5 3 Z" fill="#f59e0b" />
+    {/* Right Page Text Lines */}
+    <line x1="29" y1="20" x2="37" y2="20" stroke="#93c5fd" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="29" y1="24" x2="37" y2="24" stroke="#93c5fd" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="29" y1="28" x2="35" y2="28" stroke="#93c5fd" strokeWidth="1.5" strokeLinecap="round" />
+    
+    {/* Story Sparkle / Star Above Book */}
+    <path d="M24 6 L25.5 9 L29 10.5 L25.5 12 L24 15 L22.5 12 L19 10.5 L22.5 9 Z" fill="#f59e0b" />
   </svg>
 );
 
 interface GameScoreWithLevel extends GameScore {
   unlockedLevel?: number;
 }
+
+const AchievementTrophy: React.FC<{ score: number; className?: string }> = ({ score, className = "w-5 h-5" }) => {
+  if (score >= 100) {
+    return (
+      <div className="relative inline-flex items-center justify-center p-1.5 rounded-full bg-gradient-to-tr from-amber-200 via-amber-100 to-yellow-200 border border-yellow-400 shadow-[0_0_12px_rgba(245,158,11,0.45)] animate-pulse" style={{ animationDuration: '3s' }} title={`Gold Trophy (Score: ${score})`}>
+        <Trophy className={`${className} text-amber-500 fill-yellow-400 stroke-amber-600`} />
+      </div>
+    );
+  }
+  if (score >= 66) {
+    return (
+      <div className="relative inline-flex items-center justify-center p-1.5 rounded-full bg-gradient-to-tr from-slate-200 via-slate-100 to-slate-300 border border-slate-300 shadow-xs" title={`Silver Trophy (Score: ${score})`}>
+        <Trophy className={`${className} text-slate-400 fill-slate-300 stroke-slate-500`} />
+      </div>
+    );
+  }
+  if (score >= 40) {
+    return (
+      <div className="relative inline-flex items-center justify-center p-1.5 rounded-full bg-gradient-to-tr from-amber-900/10 via-amber-800/10 to-amber-700/20 border border-amber-700/40 shadow-[0_0_8px_rgba(180,83,9,0.25)]" title={`Bronze Trophy (Score: ${score})`}>
+        <Trophy className={`${className} text-amber-700 fill-amber-600/80 stroke-amber-800`} />
+      </div>
+    );
+  }
+  return (
+    <div className="relative inline-flex items-center justify-center p-1 rounded-full bg-slate-100 border border-slate-200 opacity-60" title={`Unranked (Score: ${score})`}>
+      <Trophy className={`${className} text-slate-300 fill-slate-100 stroke-slate-400`} />
+    </div>
+  );
+};
+
+const levelMetadata: Record<number, { titleKey: string; diffKey: string; descKey: string; emoji: string }> = {
+  1: {
+    titleKey: 'Getting Started',
+    diffKey: 'Easy',
+    descKey: 'Build your confidence with gentle exercises',
+    emoji: '🌱'
+  },
+  2: {
+    titleKey: 'Challenge Yourself',
+    diffKey: 'Medium',
+    descKey: 'Ready for more? Test your memory agility',
+    emoji: '🌟'
+  },
+  3: {
+    titleKey: 'Focus Builder',
+    diffKey: 'Intermediate',
+    descKey: 'Sharpen your attention & recall speed',
+    emoji: '⚡'
+  },
+  4: {
+    titleKey: 'Mastery Level',
+    diffKey: 'Advanced',
+    descKey: 'Train complex pattern recognition',
+    emoji: '🔥'
+  },
+  5: {
+    titleKey: 'Grand Champion',
+    diffKey: 'Expert',
+    descKey: 'Maximum cognitive agility test',
+    emoji: '👑'
+  }
+};
 
 // Daily Routine Recall Pool (Logical sequences)
 const routineEvents = [
@@ -1441,19 +1537,9 @@ export const BrainGames: React.FC = () => {
     setShowInstructions(true);
   };
 
-  const handleStartGame = () => {
-    setShowInstructions(false);
-    setGameStep('playing');
-    setStartTime(Date.now());
-    setSessionMistakes(0);
-
-    const level = selectedLevel || 1;
-
-    if (activeGame === 'game-1') {
-      // Memory Match
-      // Level 1: 2 pairs, Level 2: 3 pairs, Level 3: 4 pairs, Level 4: 6 pairs, Level 5: 8 pairs
+  const initializeGameStateForLevel = (gId: string, level: number) => {
+    if (gId === 'game-1') {
       const pairsCount = level === 1 ? 2 : level === 2 ? 3 : level === 3 ? 4 : level === 4 ? 6 : 8;
-      // Fetch unique items based on level seed offset
       const datasetItems = getDailyCognitiveSelection(10 + level, pairsCount);
       const pool = datasetItems.map(item => item.emoji);
       const shuffled = [...pool, ...pool]
@@ -1462,22 +1548,17 @@ export const BrainGames: React.FC = () => {
       setCards(shuffled);
       setSelectedCards([]);
       setMemoryMoves(0);
-    } else if (activeGame === 'game-2') {
-      // Sequence & Order
-      const count = 2 + level; // Level 1: 3 items, Level 5: 7 items
+    } else if (gId === 'game-2') {
+      const count = 2 + level;
       const rawItems = getDailyCognitiveSelection(20 + level, count);
       const selected = rawItems.map(item => ({ id: item.id, label: item.name, emoji: item.emoji }));
       setSeqOriginal(selected);
       setSeqShuffled([...selected].sort(() => Math.random() - 0.5));
       setSeqSelected([]);
       setSeqPreviewing(true);
-      setSeqPreviewTimeLeft(Math.max(2, 6 - level)); // shorter preview time
-    } else if (activeGame === 'game-3') {
-      // Attention Focus Odd-one-out
-      // Level 1: 4 cards (2x2), Level 2: 6 cards, Level 3: 9 cards, Level 4: 12 cards, Level 5: 16 cards
+      setSeqPreviewTimeLeft(Math.max(2, 6 - level));
+    } else if (gId === 'game-3') {
       const size = level === 1 ? 4 : level === 2 ? 6 : level === 3 ? 9 : level === 4 ? 12 : 16;
-      
-      // Select 2 random items from dataset to act as normal and odd
       const rawItems = getDailyCognitiveSelection(30 + level + Math.floor(Math.random() * 100), 2);
       const normalItem = rawItems[0] || { emoji: '🦁', name: 'Lion' };
       const oddItem = rawItems[1] || { emoji: '🐯', name: 'Tiger' };
@@ -1490,40 +1571,30 @@ export const BrainGames: React.FC = () => {
 
       setAttentionItems(items);
       setAttentionTarget(oddIndex);
-    } else if (activeGame === 'game-4') {
-      // Object Recognition
-      const rounds = level + 1; // 2 to 6 rounds
+    } else if (gId === 'game-4') {
+      const rounds = level + 1;
       setObjRoundsTotal(rounds);
       setObjRoundCurrent(0);
       setObjCorrectCount(0);
-      
-      // Pre-generate targets and options for all rounds to avoid repeats in this run
       const rawRounds = getDailyCognitiveSelection(40 + level + Math.floor(Math.random() * 50), rounds);
       (window as any)._pregeneratedRecognitionRounds = rawRounds.map((target, idx) => {
-        // Find 3 distractors from the dataset
         const distractors = getDailyCognitiveSelection(50 + level + idx * 5 + Math.floor(Math.random() * 30), 4)
           .filter(item => item.id !== target.id)
           .slice(0, 3);
         const options = [target.name, ...distractors.map(d => d.name)].sort(() => Math.random() - 0.5);
         return { emoji: target.emoji, answer: target.name, options };
       });
-
       loadObjectRecognitionRound(0);
-    } else if (activeGame === 'game-5') {
-      // Daily Routine Recall
-      const count = 2 + level; // Level 1: 3 events, Level 5: 7 events
-      // Take first N events from routineEvents
+    } else if (gId === 'game-5') {
+      const count = 2 + level;
       const selected = routineEvents.slice(0, count);
       setRoutineOriginal(selected);
       setRoutineShuffled([...selected].sort(() => Math.random() - 0.5));
       setRoutineSelected([]);
-    } else if (activeGame === 'game-6') {
-      // Language & Word Memory
-      const count = 1 + level; // Level 1: 2 words, Level 5: 6 words
+    } else if (gId === 'game-6') {
+      const count = 1 + level;
       const rawOriginal = getDailyCognitiveSelection(60 + level, count);
       const original = rawOriginal.map(item => item.name.toUpperCase());
-      
-      // Distractors
       const rawDistractors = getDailyCognitiveSelection(70 + level, count + 4)
         .filter(item => !original.includes(item.name.toUpperCase()))
         .slice(0, 4);
@@ -1536,6 +1607,35 @@ export const BrainGames: React.FC = () => {
       setLangPreviewing(true);
       setLangPreviewTimeLeft(Math.max(3, 7 - level));
     }
+  };
+
+  const handleStartGame = () => {
+    setShowInstructions(false);
+    setGameStep('playing');
+    setStartTime(Date.now());
+    setSessionMistakes(0);
+
+    const level = selectedLevel || 1;
+    if (activeGame) {
+      initializeGameStateForLevel(activeGame, level);
+    }
+  };
+
+  // Progression Action Helpers
+  const handlePlayNextLevel = () => {
+    if (!activeGame) return;
+    const currentUnlocked = games.find(g => g.gameId === activeGame)?.unlockedLevel || 1;
+    const currentLvl = selectedLevel || 1;
+    const nextLvl = currentLvl + 1;
+
+    const targetLvl = Math.min(5, Math.max(nextLvl, currentUnlocked));
+    setSelectedLevel(targetLvl);
+    setShowInstructions(false);
+    setGameStep('playing');
+    setStartTime(Date.now());
+    setSessionMistakes(0);
+
+    initializeGameStateForLevel(activeGame, targetLvl);
   };
 
   // --- GAME PLAY HANDLERS ---
@@ -1704,9 +1804,12 @@ export const BrainGames: React.FC = () => {
   const finishGame = async (accuracy: number, mistakes: number, duration: number) => {
     const level = selectedLevel || 1;
     
-    // Transparent calculation
-    const baseScore = accuracy;
-    const finalScore = Math.max(10, Math.min(100, Math.round(baseScore)));
+    // Performance-based score calculation (Strictly dynamic: 15 to 100 pts):
+    // Accuracy is primary factor; deductions applied for mistakes made during session.
+    // Level 1 or Level 2 completion NEVER defaults to 100 points automatically.
+    const mistakePenalty = mistakes * 5;
+    const rawScore = accuracy - mistakePenalty;
+    const finalScore = Math.max(15, Math.min(100, Math.round(rawScore)));
 
     setSessionScore(finalScore);
     setSessionAccuracy(accuracy);
@@ -1774,16 +1877,6 @@ export const BrainGames: React.FC = () => {
   };
 
   // Progression Action Helpers
-  const handlePlayNextLevel = () => {
-    const currentUnlocked = games.find(g => g.gameId === activeGame)?.unlockedLevel || 1;
-    const nextLevel = (selectedLevel || 1) + 1;
-    if (nextLevel <= currentUnlocked) {
-      setSelectedLevel(nextLevel);
-      setShowInstructions(true);
-      setGameStep('idle');
-    }
-  };
-
   const handleTryNextGame = () => {
     // Find next unlocked game in order
     const currentIndex = games.findIndex(g => g.gameId === activeGame);
@@ -1817,16 +1910,18 @@ export const BrainGames: React.FC = () => {
   };
 
   const completedCount = games.filter(g => g.completedToday).length;
+  const overallScore = Math.round(games.reduce((acc, g) => acc + (g.bestScore || 0), 0) / (games.length || 6));
+  
+  // Calculate streak from storage history for current user
+  const gameSessions = storageService.getGameSessions();
+  const userSessions = gameSessions.filter((s: any) => !s.patientId || s.patientId === currentUser?.id);
+  const uniqueDays = new Set(userSessions.map(s => s.completedAt?.split('T')[0])).size;
+  const currentStreak = uniqueDays;
 
   return (
-    <div className="pb-12 space-y-6">
-      {/* 1. Header (dashboard or active game back) */}
-      {!activeGame ? (
-        <div>
-          <h1 className="text-3xl font-extrabold text-brand-navy">{t('games.title')}</h1>
-          <p className="text-brand-grayText font-medium mt-1">{t('games.subtitle')}</p>
-        </div>
-      ) : (
+    <div className="pb-12 space-y-8">
+      {/* Active Game Back Header */}
+      {activeGame && (
         <div className="flex items-center justify-between border-b border-brand-purpleLight pb-4">
           <button 
             onClick={() => handleSelectGame(null as any)} 
@@ -1845,90 +1940,207 @@ export const BrainGames: React.FC = () => {
         </div>
       )}
 
-      {/* 2. Main Dashboard (if no active game chosen) */}
+      {/* 2. Main Dashboard Layout (if no active game chosen) */}
       {!activeGame && (
         <>
-          {/* Daily progression bar */}
-          <div className="bg-white p-6 rounded-3xl border border-brand-purpleLight shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-brand-purpleLight text-brand-purple flex items-center justify-center font-black text-2xl">
-                {completedCount} / 6
+          {/* Top 3 Progress Summary Cards matching Reference Image */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Card 1: Today's Brain Training */}
+            <div className="bg-white p-6 rounded-3xl border-2 border-brand-purpleLight shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center shadow-2xs">
+                    <Target className="w-6 h-6 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-brand-grayText uppercase tracking-wider block">Today's Brain Training</span>
+                    <span className="text-3xl font-black text-brand-navy">{completedCount} / 6</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-lg text-brand-navy">{t('games.completedToday')}</h3>
-                <p className="text-brand-grayText text-sm">
-                  {completedCount === 6 
-                    ? (language === 'Hindi' ? 'अद्भुत! आपने सभी अभ्यास पूरे कर लिए हैं!' : language === 'Bengali' ? 'অসাধারণ! আপনি সব অনুশীলন শেষ করেছেন!' : language === 'Assamese' ? 'অসাধাৰণ! আপুনি সকলো খেল সমাপ্ত কৰিলে!' : 'Amazing! You finished all exercises!') 
-                    : (language === 'Hindi' ? 'अपने लक्ष्यों को पूरा करने के लिए खेलना जारी रखें।' : language === 'Bengali' ? 'আপনার লক্ষ্যগুলি পূরণ করতে খেলা চালিয়ে যান।' : language === 'Assamese' ? 'খেলি থাকক আৰু আপোনাৰ লক্ষ্য সম্পূৰ্ণ কৰক।' : 'Keep playing to complete your goals.')}
+              
+              <div className="mt-4 space-y-2">
+                <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden border border-gray-200">
+                  <div 
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full transition-all duration-500 rounded-full"
+                    style={{ width: `${(completedCount / 6) * 100}%` }}
+                  />
+                </div>
+                <p className="text-xs font-bold text-brand-grayText">
+                  Keep playing to complete your daily goals.
                 </p>
               </div>
             </div>
-            <div className="w-full md:w-64 bg-gray-100 h-4 rounded-full overflow-hidden">
-              <div 
-                className="bg-brand-purple h-full transition-all duration-300"
-                style={{ width: `${(completedCount / 6) * 100}%` }}
-              />
+
+            {/* Card 2: Overall Score */}
+            <div className="bg-white p-6 rounded-3xl border-2 border-brand-purpleLight shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 border border-amber-100 flex items-center justify-center shadow-2xs">
+                    <Trophy className="w-6 h-6 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-brand-grayText uppercase tracking-wider block flex items-center gap-1">
+                      Overall Score <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                    </span>
+                    <span className="text-3xl font-black text-brand-navy">{overallScore}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-2">
+                <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden border border-gray-200">
+                  <div 
+                    className="bg-gradient-to-r from-brand-purple to-indigo-600 h-full transition-all duration-500 rounded-full"
+                    style={{ width: `${overallScore}%` }}
+                  />
+                </div>
+                <p className="text-xs font-bold text-emerald-600">
+                  {overallScore >= 70 ? 'Great progress!' : 'Keep practicing to boost your score!'}
+                </p>
+              </div>
+            </div>
+
+            {/* Card 3: Current Streak */}
+            <div className="bg-white p-6 rounded-3xl border-2 border-brand-purpleLight shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-500 border border-orange-100 flex items-center justify-center shadow-2xs">
+                    <Flame className="w-6 h-6 stroke-[2.5] text-orange-500 fill-orange-400" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-brand-grayText uppercase tracking-wider block">Current Streak</span>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-3xl font-black text-brand-navy">{currentStreak}</span>
+                      <span className="text-xs font-extrabold text-brand-grayText">Days</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 bg-orange-50/80 border border-orange-200/60 p-2.5 rounded-2xl text-center">
+                <span className="text-xs font-black text-orange-700">You're doing amazing! 🔥</span>
+              </div>
             </div>
           </div>
 
-          {/* Game cards listing */}
+          {/* Brain Games Section Header matching Reference Image */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-brand-purple text-white flex items-center justify-center shadow-md">
+                <SVGBrain className="w-8 h-8" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-brand-navy">Brain Games</h2>
+                <p className="text-brand-grayText font-bold text-sm">Fun activities to keep your mind active and healthy</p>
+              </div>
+            </div>
+
+            <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-brand-purpleLight shadow-2xs text-xs font-black text-brand-purple">
+              <span>Train 6 skills</span>
+              <span>•</span>
+              <span>Build a healthier mind</span>
+              <span>•</span>
+              <span>Feel better every day</span>
+            </div>
+          </div>
+
+          {/* Six Game cards listing matching Reference Image visual style & pill buttons */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {(() => {
-              const mmScore = games.find(g => g.gameId === 'game-1')?.bestScore || 0;
-              const soScore = games.find(g => g.gameId === 'game-2')?.bestScore || 0;
-              const restUnlocked = mmScore >= 70 && soScore >= 70;
-
               return games.map((g) => {
-                const isLocked = (g.gameId !== 'game-1' && g.gameId !== 'game-2') && !restUnlocked;
-                const unlockedLevel = g.unlockedLevel || 1;
+                const isLocked = false;
 
                 return (
                   <div 
                     key={g.gameId}
-                    className={`bg-white p-6 rounded-3xl border border-brand-purpleLight shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative ${
-                      isLocked ? 'opacity-70' : ''
+                    className={`bg-white p-6 rounded-3xl border-2 border-brand-purpleLight shadow-sm flex flex-col justify-between hover:shadow-md hover:scale-[1.01] transition-all relative group ${
+                      isLocked ? 'opacity-70 bg-gray-50/70' : ''
                     }`}
                   >
                     {isLocked && (
-                      <div className="absolute top-4 right-4 text-brand-grayText">
+                      <div className="absolute top-4 right-4 text-brand-grayText bg-gray-100 p-2.5 rounded-full shadow-2xs z-20">
                         <Lock className="w-5 h-5" />
                       </div>
                     )}
+
                     <div>
-                      <h3 className="font-black text-lg text-brand-navy flex items-center gap-3">
-                        {g.gameId === 'game-1' && <SVGBrainGame className="w-10 h-10 flex-shrink-0" />}
-                        {g.gameId === 'game-2' && <SVGSequenceGame className="w-10 h-10 flex-shrink-0" />}
-                        {g.gameId === 'game-3' && <SVGAttentionGame className="w-10 h-10 flex-shrink-0" />}
-                        {g.gameId === 'game-4' && <SVGObjectGame className="w-10 h-10 flex-shrink-0" />}
-                        {g.gameId === 'game-5' && <SVGRoutineGame className="w-10 h-10 flex-shrink-0" />}
-                        {g.gameId === 'game-6' && <SVGLanguageGame className="w-10 h-10 flex-shrink-0" />}
-                        <span>{getGameNameTranslated(g.gameId, g.gameName)}</span>
+                      {/* Illustration Container with Category Badge */}
+                      <div className={`w-full h-40 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-[1.03] shadow-xs relative overflow-hidden ${
+                        g.gameId === 'game-1' ? 'bg-gradient-to-br from-purple-200 via-indigo-100 to-purple-100 border border-purple-200' :
+                        g.gameId === 'game-2' ? 'bg-gradient-to-br from-emerald-200 via-teal-100 to-green-100 border border-teal-200' :
+                        g.gameId === 'game-3' ? 'bg-gradient-to-br from-amber-200 via-orange-100 to-peach-100 border border-orange-200' :
+                        g.gameId === 'game-4' ? 'bg-gradient-to-br from-sky-200 via-cyan-100 to-blue-100 border border-sky-200' :
+                        g.gameId === 'game-5' ? 'bg-gradient-to-br from-rose-200 via-pink-100 to-red-100 border border-rose-200' :
+                        'bg-gradient-to-br from-blue-200 via-indigo-100 to-sky-100 border border-blue-200'
+                      }`}>
+                        {/* Top Left Icon Badge */}
+                        <div className={`absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center text-white shadow-xs z-10 ${
+                          g.gameId === 'game-1' ? 'bg-purple-600' :
+                          g.gameId === 'game-2' ? 'bg-emerald-600' :
+                          g.gameId === 'game-3' ? 'bg-orange-500' :
+                          g.gameId === 'game-4' ? 'bg-sky-600' :
+                          g.gameId === 'game-5' ? 'bg-pink-600' :
+                          'bg-indigo-600'
+                        }`}>
+                          {g.gameId === 'game-1' && <span className="text-xs">🎴</span>}
+                          {g.gameId === 'game-2' && <span className="text-xs">💡</span>}
+                          {g.gameId === 'game-3' && <span className="text-xs">👁️</span>}
+                          {g.gameId === 'game-4' && <span className="text-xs">🔍</span>}
+                          {g.gameId === 'game-5' && <span className="text-xs">📅</span>}
+                          {g.gameId === 'game-6' && <span className="text-xs">💬</span>}
+                        </div>
+
+                        {/* Feature Vector Illustration */}
+                        {g.gameId === 'game-1' && <SVGBrainGame className="w-28 h-28 drop-shadow-md transform transition-transform group-hover:scale-105" />}
+                        {g.gameId === 'game-2' && <SVGSequenceGame className="w-28 h-28 drop-shadow-md transform transition-transform group-hover:scale-105" />}
+                        {g.gameId === 'game-3' && <SVGAttentionGame className="w-28 h-28 drop-shadow-md transform transition-transform group-hover:scale-105" />}
+                        {g.gameId === 'game-4' && <SVGObjectGame className="w-28 h-28 drop-shadow-md transform transition-transform group-hover:scale-105" />}
+                        {g.gameId === 'game-5' && <SVGRoutineGame className="w-28 h-28 drop-shadow-md transform transition-transform group-hover:scale-105" />}
+                        {g.gameId === 'game-6' && <SVGLanguageGame className="w-28 h-28 drop-shadow-md transform transition-transform group-hover:scale-105" />}
+                      </div>
+
+                      <h3 className="font-black text-xl text-brand-navy leading-tight">
+                        {getGameNameTranslated(g.gameId, g.gameName)}
                       </h3>
-                      <p className="text-sm text-brand-grayText mt-2 leading-relaxed">
-                        {isLocked 
-                          ? gt.lockedDesc
-                          : `${gt.trainDesc} ${unlockedLevel}`}
+                      <p className="text-sm font-semibold text-brand-grayText mt-2 leading-relaxed">
+                        {g.gameId === 'game-1' ? 'Find and match pairs of cards to boost your memory.' :
+                         g.gameId === 'game-2' ? 'Remember the correct sequence and order.' :
+                         g.gameId === 'game-3' ? 'Spot the differences and sharpen your attention.' :
+                         g.gameId === 'game-4' ? 'Look, identify and remember everyday objects.' :
+                         g.gameId === 'game-5' ? 'Recall your daily activities and routines.' :
+                         'Listen to stories, remember words and answer.'}
                       </p>
                     </div>
 
-                    <div className="mt-6 pt-4 border-t border-brand-purpleLight flex items-center justify-between">
-                      <div className="text-xs font-bold text-brand-grayText flex items-center gap-1">
-                        <Trophy className="w-4 h-4 text-brand-orange" />
-                        <span>Best: {g.bestScore} {t('games.points')}</span>
+                    <div className="mt-6 pt-4 border-t border-brand-purpleLight flex items-center justify-between gap-2">
+                      <div>
+                        <span className="text-[10px] font-black uppercase text-brand-grayText block leading-tight">Best Score</span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <AchievementTrophy score={g.bestScore || 0} className="w-4 h-4" />
+                          <span className="text-base font-black text-brand-navy">{g.bestScore || 0}</span>
+                        </div>
                       </div>
+
                       <button
                         onClick={() => {
                           if (isLocked) return;
                           handleSelectGame(g.gameId);
                         }}
                         disabled={isLocked}
-                        className={`px-5 py-2.5 rounded-xl text-sm font-black transition-all shadow-sm ${
+                        className={`px-6 py-2.5 rounded-full text-sm font-black transition-all shadow-md flex items-center gap-1 text-white hover:scale-105 active:scale-95 ${
                           isLocked 
-                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'bg-brand-purple text-white hover:bg-opacity-95'
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                            : g.gameId === 'game-1' ? 'bg-purple-600 hover:bg-purple-700' :
+                              g.gameId === 'game-2' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                              g.gameId === 'game-3' ? 'bg-orange-500 hover:bg-orange-600' :
+                              g.gameId === 'game-4' ? 'bg-sky-600 hover:bg-sky-700' :
+                              g.gameId === 'game-5' ? 'bg-pink-600 hover:bg-pink-700' :
+                              'bg-indigo-600 hover:bg-indigo-700'
                         }`}
                       >
-                        {isLocked ? gt.locked : gt.open}
+                        <span>Play</span>
+                        <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -1936,18 +2148,49 @@ export const BrainGames: React.FC = () => {
               });
             })()}
           </div>
+
+          {/* Bottom Motivational Banner matching Reference Image */}
+          <div className="bg-gradient-to-r from-amber-100 via-emerald-100 to-teal-100 border border-emerald-200/80 p-6 rounded-3xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-white p-2 flex items-center justify-center shadow-sm flex-shrink-0 animate-bounce" style={{ animationDuration: '4s' }}>
+                <SVGBrain className="w-12 h-12 text-brand-purple" />
+              </div>
+              <div>
+                <h4 className="text-lg font-black text-brand-navy">Small steps today, a sharper mind tomorrow! 💙</h4>
+                <p className="text-xs font-bold text-brand-grayText mt-0.5 font-sans">"Keep going... You're doing great!"</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 bg-white/90 backdrop-blur-xs px-5 py-3 rounded-2xl border border-emerald-200 shadow-xs">
+              <span className="text-2xl">🐭</span>
+              <span className="text-xs font-black text-brand-navy">Let's play and keep your mind active!</span>
+            </div>
+          </div>
         </>
       )}
 
-      {/* 3. Level Selection Screen (if game is active but no level selected) */}
+      {/* 3. Upgraded Level Selection Screen */}
       {activeGame && !selectedLevel && (
-        <div className="max-w-xl mx-auto bg-white p-8 rounded-3xl border border-brand-purpleLight shadow-sm space-y-6">
+        <div className="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-3xl border-2 border-brand-purpleLight shadow-md space-y-6">
           <div className="text-center border-b border-brand-purpleLight pb-4">
-            <h3 className="text-2xl font-black text-brand-navy">{gt.selectLevel}</h3>
-            <p className="text-brand-grayText mt-1">{gt.challengeLvl}</p>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              {activeGame === 'game-1' && <SVGBrainGame className="w-12 h-12" />}
+              {activeGame === 'game-2' && <SVGSequenceGame className="w-12 h-12" />}
+              {activeGame === 'game-3' && <SVGAttentionGame className="w-12 h-12" />}
+              {activeGame === 'game-4' && <SVGObjectGame className="w-12 h-12" />}
+              {activeGame === 'game-5' && <SVGRoutineGame className="w-12 h-12" />}
+              {activeGame === 'game-6' && <SVGLanguageGame className="w-12 h-12" />}
+              <h3 className="text-2xl sm:text-3xl font-black text-brand-navy">
+                {getGameNameTranslated(activeGame, games.find(g => g.gameId === activeGame)?.gameName || '')}
+              </h3>
+            </div>
+            <p className="text-brand-grayText font-bold text-sm sm:text-base">{gt.challengeLvl}</p>
           </div>
 
-          <div className="space-y-3">
+          <div className="relative space-y-4">
+            {/* Visual connector line linking progression nodes */}
+            <div className="absolute left-10 top-8 bottom-8 w-1 bg-gradient-to-b from-brand-purple via-indigo-300 to-gray-200 z-0 hidden sm:block" />
+
             {(() => {
               const activeGameData = games.find(g => g.gameId === activeGame);
               const maxUnlocked = activeGameData?.unlockedLevel || 1;
@@ -1955,37 +2198,90 @@ export const BrainGames: React.FC = () => {
               return Array.from({ length: 5 }).map((_, idx) => {
                 const lvl = idx + 1;
                 const isLvlLocked = lvl > maxUnlocked;
+                const meta = levelMetadata[lvl] || levelMetadata[1];
+                const isCompleted = lvl < maxUnlocked;
+                const isCurrentActive = lvl === maxUnlocked;
 
                 return (
-                  <button
+                  <div
                     key={lvl}
-                    disabled={isLvlLocked}
-                    onClick={() => handleSelectLevel(lvl)}
-                    className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${
+                    className={`relative z-10 overflow-hidden rounded-2xl border-2 p-5 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                       isLvlLocked 
-                        ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-                        : 'border-brand-purpleLight bg-white hover:bg-brand-lavender text-brand-navy font-bold'
+                        ? 'border-gray-200 bg-gray-50/80 opacity-60'
+                        : isCurrentActive
+                        ? 'border-brand-purple bg-gradient-to-r from-purple-50/90 via-indigo-50/60 to-purple-50/90 shadow-md hover:scale-[1.01]'
+                        : 'border-emerald-200 bg-emerald-50/60 hover:bg-emerald-50 shadow-xs'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${
-                        isLvlLocked ? 'bg-gray-200 text-gray-400' : 'bg-brand-purpleLight text-brand-purple'
+                    <div className="flex items-start gap-4">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-black shadow-xs flex-shrink-0 z-10 ${
+                        isLvlLocked 
+                          ? 'bg-gray-200 text-gray-400' 
+                          : isCurrentActive
+                          ? 'bg-brand-purple text-white shadow-purple-500/20' 
+                          : 'bg-emerald-600 text-white shadow-emerald-500/20'
                       }`}>
-                        {lvl}
+                        {isLvlLocked ? <Lock className="w-6 h-6" /> : meta.emoji}
                       </div>
-                      <span className="text-base font-extrabold">{gt.level} {lvl}</span>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-black uppercase tracking-wider text-brand-purple bg-white px-2 py-0.5 rounded-md border border-brand-purpleLight">
+                            {gt.level} {lvl}
+                          </span>
+                          <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-white/90 border border-gray-200 text-brand-navy">
+                            {meta.diffKey}
+                          </span>
+                          {isCompleted && (
+                            <span className="text-xs font-black text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                              <CheckCircle className="w-3.5 h-3.5" /> ✓ COMPLETED
+                            </span>
+                          )}
+                          {isCurrentActive && (
+                            <span className="text-xs font-black text-brand-purple bg-brand-purpleLight px-2.5 py-0.5 rounded-full">
+                              ⭐ Ready to Play
+                            </span>
+                          )}
+                          {isLvlLocked && (
+                            <span className="text-xs font-extrabold text-gray-500 bg-gray-200 px-2.5 py-0.5 rounded-full">
+                              🔒 Complete Level {lvl - 1} to Unlock
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="text-lg font-black text-brand-navy">{meta.titleKey}</h4>
+                        <p className="text-xs sm:text-sm font-semibold text-brand-grayText">{meta.descKey}</p>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {isLvlLocked ? (
-                        <Lock className="w-4 h-4" />
-                      ) : (
-                        <span className="text-xs text-brand-green bg-brand-greenBg px-2 py-0.5 rounded-full font-bold">
-                          {gt.unlocked}
-                        </span>
-                      )}
+                    <div className="self-end sm:self-center">
+                      <button
+                        disabled={isLvlLocked}
+                        onClick={() => handleSelectLevel(lvl)}
+                        className={`px-6 py-3 rounded-xl text-sm font-black transition-all shadow-sm flex items-center gap-2 ${
+                          isLvlLocked
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : isCurrentActive
+                            ? 'bg-brand-purple text-white hover:bg-opacity-95 hover:scale-105 active:scale-95'
+                            : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
+                        }`}
+                      >
+                        {isLvlLocked ? (
+                          <>
+                            <Lock className="w-4 h-4" />
+                            <span>Locked</span>
+                          </>
+                        ) : lvl === 1 && !isCompleted ? (
+                          <span>BEGIN LEVEL 1 →</span>
+                        ) : isCurrentActive && lvl > 1 ? (
+                          <span>NEXT CHALLENGE →</span>
+                        ) : isCompleted ? (
+                          <span>REPLAY LEVEL {lvl}</span>
+                        ) : (
+                          <span>PLAY LEVEL {lvl} →</span>
+                        )}
+                      </button>
                     </div>
-                  </button>
+                  </div>
                 );
               });
             })()}
@@ -2377,12 +2673,14 @@ export const BrainGames: React.FC = () => {
 
           <div>
             <h3 className="text-2xl font-black text-brand-navy">
-              {sessionScore >= 85 ? gt.excellent.replace('{name}', userName) :
-               sessionScore >= 70 ? gt.progress.replace('{name}', userName) :
-               gt.keepPracticing.replace('{name}', userName)}
+              {sessionScore >= 90 ? `🌟 Excellent work, ${userName}!` :
+               sessionScore >= 75 ? `🎉 Great job, ${userName}!` :
+               sessionScore >= 60 ? `👍 Good progress, ${userName}!` :
+               sessionScore >= 40 ? `💪 Keep practicing, ${userName}!` :
+               `🌱 Let's try again, ${userName}!`}
             </h3>
             <p className="text-brand-grayText text-base mt-2">
-              {gt.nextChallenge}
+              {sessionScore >= 70 ? gt.nextChallenge : 'Regular practice helps maintain memory agility and focus.'}
             </p>
           </div>
 

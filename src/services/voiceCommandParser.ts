@@ -1,10 +1,554 @@
 import { storageService } from './storageService';
 
+// --- GENERALIZED PATIENT AI QUERY RESOLVER ---
+export function patientAIQueryResolver(
+  norm: string,
+  semanticCore: string,
+  language: string,
+  contextData: any,
+  _voiceContext: any = null
+): any | null {
+  const profile = contextData.profile || (typeof storageService !== 'undefined' ? storageService.getCurrentUser() : null) || {};
+  const userName = profile.name || 'Patient';
+  const memories = contextData.memories || (typeof storageService !== 'undefined' ? storageService.getMemories() : []) || [];
+  const schedule = contextData.schedule || (typeof storageService !== 'undefined' ? storageService.getSchedule() : []) || [];
+  const reminders = contextData.reminders || (typeof storageService !== 'undefined' ? storageService.getReminders() : []) || [];
+  const games = contextData.games || (typeof storageService !== 'undefined' ? storageService.getGames() : []) || [];
+
+  const lang = language || 'English';
+  const matchesAny = (keywords: string[]) => keywords.some(k => norm.includes(k) || semanticCore.includes(k));
+  const getLangStr = (dict: Record<string, string>): string => dict[lang] || dict.English;
+
+  // =========================================================================
+  // 0. EXPLICIT REMINDER CREATION CHECK FIRST!
+  // =========================================================================
+  const isExplicitReminderCreate = matchesAny([
+    'remind me to', 'remind me at', 'add a reminder', 'add reminder',
+    'set a reminder', 'create a reminder', 'schedule a reminder',
+    'reminder set karo', 'reminder banao', 'रिमाइंडर लगाओ', 'রিমাইন্ডার সেট করুন'
+  ]);
+  if (isExplicitReminderCreate) {
+    return null; // Delegate to deterministic reminder creation parser
+  }
+
+  // =========================================================================
+  // 1. SPECIFIC GAME DIRECT OPENING
+  // =========================================================================
+  if (matchesAny(['memory match', 'match game', 'match memory', 'memory matching'])) {
+    return {
+      intent: 'OPEN_MEMORY_MATCH',
+      path: '/games',
+      gameId: 'game-1',
+      response: getLangStr({
+        English: 'Starting Memory Match.',
+        Hindi: 'मेमोरी मैच शुरू किया जा रहा है।',
+        Bengali: 'মেমরি ম্যাচ শুরু করা হচ্ছে।',
+        Assamese: 'স্মৃতি সংযোগ আৰম্ভ কৰা হৈছে।',
+        Manipuri: 'মেমোরী ম্যাচ হৌরে।',
+        Khasi: 'Sdang ialehkai Memory Match.',
+        Mizo: 'Memory Match khelh tan a ni dawn e.',
+        Nagamese: 'Memory Match shuru kurise.',
+        Tripuri: 'Memory Match choba khaili.'
+      })
+    };
+  }
+  if (matchesAny(['sequence & order', 'sequence and order', 'sequence game'])) {
+    return {
+      intent: 'OPEN_SEQUENCE_ORDER',
+      path: '/games',
+      gameId: 'game-2',
+      response: getLangStr({
+        English: 'Starting Sequence & Order.',
+        Hindi: 'सीक्वेंस और ऑर्डर शुरू किया जा रहा है।',
+        Bengali: 'সিকোয়েন্স অ্যান্ড অর্ডার শুরু করা হচ্ছে।',
+        Assamese: 'ক্ৰম আৰু ক্ৰমাংকন আৰম্ভ কৰা হৈছে।',
+        Manipuri: 'প্যাটার্ন নীংশিংবা হৌরে।',
+        Khasi: 'Sdang ialehkai Sequence & Order.',
+        Mizo: 'Sequence & Order khelh tan a ni dawn e.',
+        Nagamese: 'Sequence & Order shuru kurise.',
+        Tripuri: 'Sequence & Order choba khaili.'
+      })
+    };
+  }
+
+  // =========================================================================
+  // 2. BRAIN GAME RECOMMENDATION / BORED INTENT
+  // =========================================================================
+  const isGameRecReq = matchesAny([
+    'recommend', 'should i play', 'what game should i play', 'which game should i play',
+    'feel bored', 'bored', 'best game for me', 'game to improve', 'improve my memory based on'
+  ]) || (matchesAny(['bored', 'feeling bored']) && matchesAny(['game', 'games', 'play', 'memory']));
+
+  if (isGameRecReq) {
+    const g1 = games.find((g: any) => g.gameId === 'game-1') || games[0] || { unlockedLevel: 1, bestScore: 0, gameName: 'Memory Match' };
+    const bestScore = g1.bestScore || 0;
+    const unlockedLevel = g1.unlockedLevel || 1;
+
+    const recMsg: Record<string, string> = {
+      English: `Based on your previous performance, Memory Match is a great choice today. You are currently at Level ${unlockedLevel} with a top score of ${bestScore > 0 ? bestScore + ' points' : 'steady progress'}. Let's open Brain Games and continue with it!`,
+      Hindi: `आपके पिछले प्रदर्शन के आधार पर, आज मेमोरी मैच एक बेहतरीन विकल्प है। आप वर्तमान में लेवल ${unlockedLevel} पर हैं। चलिए दिमागी खेल खोलते हैं!`,
+      Bengali: `আপনার পূর্ববর্তী পারফরম্যান্সের ভিত্তিতে, আজ মেমরি ম্যাচ একটি দুর্দান্ত পছন্দ। আপনি বর্তমানে লেভেল ${unlockedLevel}-এ আছেন। চলুন ব্রেন গেম খুলি!`,
+      Assamese: `আপোনাৰ পূৰ্বৰ অগ্ৰগতিৰ ভিত্তিত, আজি স্মৃতি সংযোগ খেলটো অতি সুন্দৰ বিকল্প। আপুনি লেভেল ${unlockedLevel} ত আছে। ব’লক মগজুৰ খেল খোলোঁ!`,
+      Manipuri: `নহাক্কী চাউখৎপদা য়ুমফম ওইগা ঙসি মেমোরী ম্যাচ শান্নবা অমুক ফগনি। ব্রেন গেম হাঙদোক্লে!`,
+      Khasi: `Katkum ka jingiaid shaphrang jong phi, u Memory Match u dei uba bha tam mynta. Ia namano ialehkai games!`,
+      Mizo: `I hmasawnna atangin vawiin hian Memory Match khelh hi a tha ber dawn e. Level ${unlockedLevel}-ah i awm mek e!`,
+      Nagamese: `Apuni laga progress hisap te aji Memory Match bisi bhal thakibo. Brain games khulise!`,
+      Tripuri: `Nini progress bai aji Memory Match khamdi. Brain games khulidi!`
+    };
+
+    return {
+      intent: 'BRAIN_GAME_RECOMMENDATION',
+      path: '/games',
+      gameId: 'game-1',
+      response: getLangStr(recMsg)
+    };
+  }
+
+  // =========================================================================
+  // 3. COGNITIVE & MEMORY PERFORMANCE QUERIES
+  // =========================================================================
+  const isCognitivePerfQuery = (
+    (matchesAny(['memory', 'memories', 'yaad', 'स्मृति', 'মেমরি']) && matchesAny(['power', 'improving', 'improvement', 'better', 'changed', 'progress', 'score', 'previous', 'performance', 'trend', 'compared', 'games', 'game', 'kaise improve', 'behtar', 'उन्नति', 'উন্নতি'])) ||
+    matchesAny([
+      'how is my memory power', 'memory power improving', 'is my memory getting better',
+      'how has my memory performance changed', 'am i improving at memory games',
+      'how was my memory performance compared', 'what is my memory score',
+      'cognitive performance', 'how am i improving', 'overall cognitive score',
+      'brain performance', 'my progress in games', 'how is my attention', 'attention score'
+    ])
+  );
+
+  if (isCognitivePerfQuery) {
+    const memoryGame = games.find((g: any) => g.gameId === 'game-1' || (g.gameName || '').toLowerCase().includes('memory')) || games[0] || { unlockedLevel: 1, bestScore: 0, gameName: 'Memory Match' };
+    const bestScore = memoryGame.bestScore || 0;
+    const unlockedLevel = memoryGame.unlockedLevel || 1;
+
+    let perfMsg: Record<string, string>;
+    if (bestScore > 0 || unlockedLevel > 1) {
+      perfMsg = {
+        English: `Your memory performance has shown steady progress! In Memory Match, you are currently at Level ${unlockedLevel} with a top score of ${bestScore} points. Your consistent practice is strengthening your cognitive recall. Let's look at your Brain Games progress.`,
+        Hindi: `आपका स्मरण प्रदर्शन लगातार सुधर रहा है! मेमोरी मैच में आप वर्तमान में लेवल ${unlockedLevel} पर हैं और आपका उच्चतम स्कोर ${bestScore} अंक है।`,
+        Bengali: `আপনার স্মৃতিশক্তির কার্যক্ষমতা ক্রমাগত উন্নত হচ্ছে! মেমরি ম্যাচে আপনি বর্তমানে লেভেল ${unlockedLevel}-এ আছেন এবং সেরা স্কোর ${bestScore} পয়েন্ট।`,
+        Assamese: `আপোনাৰ স্মৃতিশক্তিৰ অগ্ৰগতি ধাৰাবাহিকভাৱে উন্নত হৈছে! স্মৃতি সংযোগ খেলত আপুনি লেভেল ${unlockedLevel} ত আছে।`,
+        Manipuri: `নহাক্কী মেমোরী শান্নবা মপাঙ্গল চাউখৎলক্লি! মেমোরী ম্যাচতা নহাক হৌজিক লেবেল ${unlockedLevel} দা লৈরি।`,
+        Khasi: `Ka jingtrei kam jong ka jingkynmaw jong phi ka nang iaid shaphrang! Ha Memory Match phi don ha Level ${unlockedLevel}.`,
+        Mizo: `I hriatrengna dinhmun a hma sawn zel e! Memory Match-ah Level ${unlockedLevel}-ah i awm mek e.`,
+        Nagamese: `Apuni laga memory performance bisi improve hoikena ase! Memory Match te apuni Level ${unlockedLevel} te ase.`,
+        Tripuri: `Nini memory performance bhal hoikena tongkha! Memory Match te nini Level ${unlockedLevel} tongkha.`
+      };
+    } else {
+      perfMsg = {
+        English: `You don't have enough previous memory-game results yet for me to compare your progress. Try playing Memory Match today to set your initial score!`,
+        Hindi: `आपकी प्रगति की तुलना करने के लिए अभी पर्याप्त मेमोरी गेम परिणाम नहीं हैं। आज ही खेलें!`,
+        Bengali: `আপনার অগ্রগতির তুলনা করার জন্য এখনও পর্যাপ্ত মেমরি গেমের ফলাফল নেই। আজই গেম খেলুন!`,
+        Assamese: `আপোনাৰ অগ্ৰগতি তুলনা কৰিবলৈ এতিয়ালৈকে পৰ্যাপ্ত খেলৰ ফলাফল নাই।`,
+        Manipuri: `নহাক্কী চাউখৎপদা চাংদম্ননবা হージュিকফাওবা গেমগী ফল্লফ ফংদ্রি।`,
+        Khasi: `Phi khlem pat don kiei kiba biang ban nujor ia ka jingiaid shaphrang.`,
+        Mizo: `I hmasawnna te khaikhin turin infiamna hmun hma a la tlem em em e.`,
+        Nagamese: `Apuni laga progress compare kuribole aji tak enough game records nai.`,
+        Tripuri: `Nini progress compare khamnani bhal game record tongya.`
+      };
+    }
+
+    return {
+      intent: 'COGNITIVE_PERFORMANCE_QUERY',
+      domain: 'MEMORY',
+      path: '/games',
+      gameId: 'game-1',
+      response: getLangStr(perfMsg)
+    };
+  }
+
+  // =========================================================================
+  // 4. NEXT TASK QUERY
+  // =========================================================================
+  const isNextTaskQuery = matchesAny([
+    'which task should i do next', 'what should i do next', 'what is my next task',
+    'what is my next activity', 'what next', 'subah ka kaam', 'agla kaam'
+  ]);
+
+  if (isNextTaskQuery) {
+    const pendingSched = schedule.filter((s: any) => !s.completed);
+    const pendingRems = reminders.filter((r: any) => r.status !== 'Completed');
+    const nextItem = pendingSched[0] || pendingRems[0];
+
+    let nextMsg: Record<string, string>;
+    if (nextItem) {
+      nextMsg = {
+        English: `Your next task is ${nextItem.title}${nextItem.time ? ' scheduled for ' + nextItem.time : ''}. It is ready for you, so let's get started!`,
+        Hindi: `आपका अगला कार्य ${nextItem.title} है। यह आपके लिए तैयार है, चलिए शुरुआत करते हैं!`,
+        Bengali: `আপনার পরবর্তী কাজ হলো ${nextItem.title}। এটি আপনার জন্য প্রস্তুত, চলুন শুরু করা যাক!`,
+        Assamese: `আপোনাৰ পৰৱৰ্তী কাম হ’ল ${nextItem.title}। ব’লক আৰম্ভ কৰোঁ!`,
+        Manipuri: `নহাক্কী মথংগী থবকদি ${nextItem.title} নি।`,
+        Khasi: `Ka kam jong phi kaba bud dei ${nextItem.title}.`,
+        Mizo: `I thiltih tur dawt chu ${nextItem.title} a ni e.`,
+        Nagamese: `Apuni laga akhe activity toh ${nextItem.title} ase.`,
+        Tripuri: `Nini uli activity toh ${nextItem.title} tongkha.`
+      };
+    } else {
+      nextMsg = {
+        English: "You've completed all your scheduled tasks for today! Great job!",
+        Hindi: "आपने आज के अपने सभी कार्य पूरे कर लिए हैं! बहुत बढ़िया!",
+        Bengali: "আপনি আজকের সব কাজ সম্পন্ন করেছেন! দারুণ কাজ!",
+        Assamese: "আপুনি আজিৰ সকলো কাম সম্পূৰ্ণ কৰিলে!",
+        Manipuri: "নহাক্না ঙসিগী থবক পুম্নমক লোইশিনখ্রে!",
+        Khasi: "Phi la pyndep ia ki kam baroh mynta ka sngi!",
+        Mizo: "Vawiin a i hnathawh tur zawng zawng i ti zo tawh e!",
+        Nagamese: "Apuni aji laga sob activity complete hoise!",
+        Tripuri: "Nini aji sob activity complete hoikena tongkha!"
+      };
+    }
+
+    return {
+      intent: 'NEXT_TASK_QUERY',
+      path: '/day',
+      highlightTaskId: nextItem?.id,
+      response: getLangStr(nextMsg)
+    };
+  }
+
+  // =========================================================================
+  // 5. MEDICATION SCHEDULE QUERY
+  // =========================================================================
+  const isMedicationScheduleQuery = matchesAny([
+    'medication schedule', 'my medication schedule', 'my medicine schedule',
+    'when should i take my medicine', 'what medicine do i need to take',
+    'dawa ka time', 'dawai schedule', 'tell me about my medication schedule'
+  ]);
+
+  if (isMedicationScheduleQuery) {
+    const medRems = reminders.filter((r: any) =>
+      (r.category === 'medicine' || (r.title || '').toLowerCase().includes('med') || (r.title || '').toLowerCase().includes('pill') || (r.title || '').toLowerCase().includes('dawa'))
+    );
+    let medMsg: Record<string, string>;
+    if (medRems.length > 0) {
+      const list = medRems.map((r: any) => `${r.title} at ${r.time} (${r.status === 'Completed' ? 'completed' : 'pending'})`).join(', ');
+      medMsg = {
+        English: `Here is your medication schedule for today: ${list}.`,
+        Hindi: `यह आज के लिए आपका दवा शेड्यूल है: ${list}।`,
+        Bengali: `আজকের জন্য আপনার ওষুধের সময়সূচী: ${list}।`,
+        Assamese: `আজিৰ বাবে আপোনাৰ ঔষধৰ কাৰ্যসূচী: ${list}।`,
+        Manipuri: `ঙসিগী হিদাঅগী রুটিন: ${list}।`,
+        Khasi: `Kine ki dei ki por dih dawai jong phi mynta ka sngi: ${list}.`,
+        Mizo: `Vawiin atan i damdawi ei hunruhman te chu: ${list}.`,
+        Nagamese: `Aji laga dawa schedule toh: ${list}.`,
+        Tripuri: `Aji nini medicine schedule toh: ${list}.`
+      };
+    } else {
+      medMsg = {
+        English: "You don't have any specific medicine reminders listed for today.",
+        Hindi: "आज के लिए कोई विशिष्ट दवा रिमाइंडर नहीं है।",
+        Bengali: "আজকের জন্য কোনো নির্দিষ্ট ওষুধের অনুস্মারক নেই।",
+        Assamese: "আজিৰ বাবে কোনো বিশেষ ঔষধৰ ৰিমাইণ্ডাৰ নাই।",
+        Manipuri: "ঙসিগী অখন্নবা হিদাঅগী রিমাঈন্ডর লৈতাদ্রে।",
+        Khasi: "Khlem don jingkynmaw dih dawai mynta ka sngi.",
+        Mizo: "Vawiin atan damdawi hriattirna a awm lo e.",
+        Nagamese: "Aji specific dawa reminder nai.",
+        Tripuri: "Aji specific medicine reminder tongya."
+      };
+    }
+
+    return {
+      intent: 'MEDICATION_SCHEDULE_QUERY',
+      path: '/reminders',
+      response: getLangStr(medMsg)
+    };
+  }
+
+  // =========================================================================
+  // 6. MOTIVATION_SUPPORT
+  // =========================================================================
+  const isMotivationReq = matchesAny([
+    'motivate', 'motivation', 'encouragement', 'encourage', 'not feeling good',
+    'not feeling very good', 'dont feel like', 'don\'t feel like', 'feeling low',
+    'feeling tired', 'help me finish', 'help me get through', 'help me stay on track',
+    'kaam karne ka man nahi', 'prerit', 'utsaah', 'himmat', 'anand', 'উৎসাহ', 'অনুপ্রেরণা',
+    'inspire', 'struggling to complete'
+  ]) || (
+    matchesAny(['tasks', 'activities', 'day', 'work']) &&
+    matchesAny(['motivate', 'encourag', 'help me finish', 'help me get through', 'help me stay on track'])
+  );
+
+  if (isMotivationReq) {
+    const pendingSchedule = schedule.filter((s: any) => !s.completed);
+    const pendingReminders = reminders.filter((r: any) => r.status !== 'Completed');
+    const pendingCount = pendingSchedule.length + pendingReminders.length;
+    const nextTask = pendingSchedule[0]?.title || pendingReminders[0]?.title || 'your next activity';
+
+    let motivationMsg: Record<string, string>;
+    if (pendingCount > 0) {
+      motivationMsg = {
+        English: `I'm right here with you, ${userName}. You don't have to finish everything at once. You have ${pendingCount} task${pendingCount > 1 ? 's' : ''} remaining today. Let's take them one step at a time. You can start with ${nextTask}.`,
+        Hindi: `मैं आपके साथ हूँ, ${userName}। आपको सब कुछ एक साथ पूरा करने की ज़रूरत नहीं है। आपके आज ${pendingCount} कार्य बाकी हैं। चलिए एक-एक कदम बढ़ाते हैं। आप ${nextTask} से शुरुआत कर सकते हैं।`,
+        Bengali: `আমি আপনার সাথে আছি, ${userName}। আপনাকে এক সাথে সবকিছু শেষ করতে হবে না। আজ আপনার ${pendingCount}টি কাজ বাকি আছে। চলুন একটি একটি করে শুরু করি। আপনি ${nextTask} দিয়ে শুরু করতে পারেন।`,
+        Assamese: `মই আপোনাৰ লগত আছোঁ, ${userName}। আপুনি একেলগে সকলো শেষ কৰিব নালাগে। আজি আপোনাৰ ${pendingCount}টা কাম বাকী আছে।`,
+        Manipuri: `ঐ নহাক্কী নাকান্দা লৈরি, ${userName}। নহাক অমুক্তদা পুম্নমক লোইশিনবা থোইদে।`,
+        Khasi: `Nga don bad phi, ${userName}. Phi donkam ban pyndep ia kiei kiei baroh ha ka shisien kiew.`,
+        Mizo: `I hnenah ka awm e, ${userName}. A rualin eng kim zawh vek a ngai lo a ni.`,
+        Nagamese: `Moi apuni lagote ase, ${userName}. Apuni sob ekbare complete kuribole laganai.`,
+        Tripuri: `Ang nini lok-te tongkha, ${userName}. Nini tabok ${pendingCount} activity baki tongkha.`
+      };
+    } else {
+      motivationMsg = {
+        English: `You're doing wonderfully, ${userName}! You have completed all your activities for today. Take a moment to rest and feel proud of your progress.`,
+        Hindi: `आप बहुत बढ़िया काम कर रहे हैं, ${userName}! आपने आज की अपनी सभी गतिविधियाँ पूरी कर ली हैं।`,
+        Bengali: `আপনি চমৎকার কাজ করছেন, ${userName}! আপনি আজকের সব কাজ সম্পন্ন করেছেন।`,
+        Assamese: `আপুনি সুন্দৰ কাম কৰিছে, ${userName}! আপুনি আজিৰ সকলো কাম সম্পূৰ্ণ কৰিলে।`,
+        Manipuri: `নহাক্না ফোজনা তৌরি, ${userName}! নহাক্না ঙসিগী থবক পুম্নমক লোইশিনখ্রে।`,
+        Khasi: `Phi iaid bha shibun, ${userName}! Phi la pyndep ia ki kam baroh mynta ka sngi.`,
+        Mizo: `I ti tha hle mai, ${userName}! Vawiin a i hnathawh tur zawng zawng i ti zo tawh e.`,
+        Nagamese: `Apuni bisi bhal kurise, ${userName}! Apuni aji laga sob activity complete hoikena ase.`,
+        Tripuri: `Nini samung bhal tongkha, ${userName}! Nini aji sob activity complete hoikena tongkha.`
+      };
+    }
+
+    return {
+      intent: 'MOTIVATION_SUPPORT',
+      path: '/day',
+      response: getLangStr(motivationMsg)
+    };
+  }
+
+  // =========================================================================
+  // 7. MY DAY & TASK STATUS QUERIES
+  // =========================================================================
+  const isMyDayQuery = (
+    matchesAny([
+      'tasks do i need', 'tasks i need to complete', 'what are the tasks',
+      'what do i still need to do', 'what tasks are left', 'what havent i finished',
+      'what haven\'t i finished', 'what activities are pending', 'what do i need to complete by now',
+      'what do i need to do today', 'have i finished',
+      'have i completed', 'did i finish', 'did i complete', 'did i eat', 'did i take',
+      'is lunch done', 'is walk done', 'is medicine done', 'what is remaining for today',
+      'aaj ke kya kaam', 'aaj ki dincharya', 'aaj kya karna hai', 'আজকে কি কাজ বাকি',
+      'আজকের কাজ'
+    ]) || (
+      matchesAny(['tasks', 'task', 'activities', 'activity', 'schedule', 'day']) &&
+      matchesAny(['complete', 'finish', 'pending', 'left', 'remaining', 'do', 'what', 'which', 'status', 'by now'])
+    )
+  );
+
+  if (isMyDayQuery) {
+    const entities = ['lunch', 'dinner', 'breakfast', 'walk', 'walking', 'medicine', 'medication', 'water', 'exercise', 'tea'];
+    const matchedEntity = entities.find(e => norm.includes(e));
+
+    if (matchedEntity) {
+      const schedItem = schedule.find((s: any) => (s.title || '').toLowerCase().includes(matchedEntity));
+      const remItem = reminders.find((r: any) => ((r.title || '') + ' ' + (r.category || '')).toLowerCase().includes(matchedEntity));
+      const foundItem = schedItem || remItem;
+
+      if (foundItem) {
+        const isDone = schedItem ? schedItem.completed : (remItem ? remItem.status === 'Completed' : false);
+        const title = foundItem.title || matchedEntity;
+
+        if (isDone) {
+          return {
+            intent: 'MY_DAY_QUERY',
+            path: '/day',
+            response: getLangStr({
+              English: `Yes, your ${title} activity is marked as completed today.`,
+              Hindi: `हाँ, आपकी ${title} गतिविधि आज पूर्ण चिह्नित है।`,
+              Bengali: `হ্যাঁ, আপনার ${title} কাজ আজ সম্পন্ন চিহ্নিত করা হয়েছে।`,
+              Assamese: `হয়, আপোনাৰ ${title} কামটো আজি সম্পূৰ্ণ কৰা বুলি চিহ্নিত কৰা হৈছে।`,
+              Manipuri: `হোয়, নহাক্কী ${title} থবক অসি ঙসি লোইখ্রে হায়না খনৌরে।`,
+              Khasi: `Hooid, ka kam ${title} jong phi la buh kum kaba la dep mynta ka sngi.`,
+              Mizo: `Aw, i ${title} tih tur hi vawiin hian zawh tawh anga chhinchhiah a ni.`,
+              Nagamese: `Hobi, apuni laga ${title} activity toh aji complete hoikena ase.`,
+              Tripuri: `Hobei, nini ${title} activity toh aji complete hoikena tongkha.`
+            })
+          };
+        } else {
+          return {
+            intent: 'MY_DAY_QUERY',
+            path: '/day',
+            response: getLangStr({
+              English: `No, your ${title} activity is still pending for today.`,
+              Hindi: `नहीं, आपकी ${title} गतिविधि आज अभी भी लंबित है।`,
+              Bengali: `না, আপনার ${title} কাজ আজ এখনও বাকি রয়েছে।`,
+              Assamese: `নহয়, আপোনাৰ ${title} কামটো আজি এতিয়াও বাকী আছে।`,
+              Manipuri: `নত্তে, নহাক্কী ${title} থবক অসি ঙসি হージュিকফাওবা লোইদ্রি।`,
+              Khasi: `Em, ka kam ${title} jong phi ka sah dang buhrieh mynta ka sngi.`,
+              Mizo: `Thih lo, i ${title} tih tur hi vawiin atan a la bak a ni.`,
+              Nagamese: `Nai, apuni laga ${title} activity toh aji baki ase.`,
+              Tripuri: `Nai, nini ${title} activity toh aji baki tongkha.`
+            })
+          };
+        }
+      }
+    }
+
+    const pendingSched = schedule.filter((s: any) => !s.completed);
+    const completedSched = schedule.filter((s: any) => s.completed);
+
+    const pendingTitles = pendingSched.map((s: any) => s.title).join(', ');
+    const completedTitles = completedSched.map((s: any) => s.title).join(', ');
+
+    let taskBreakdownMsg: Record<string, string>;
+
+    if (pendingSched.length > 0) {
+      taskBreakdownMsg = {
+        English: `Of course. You still have ${pendingSched.length} task${pendingSched.length > 1 ? 's' : ''} to complete today: ${pendingTitles}.${completedSched.length > 0 ? ` Completed tasks: ${completedTitles}.` : ''}`,
+        Hindi: `जी बिल्कुल। आपके आज ${pendingSched.length} कार्य बाकी हैं: ${pendingTitles}।${completedSched.length > 0 ? ` पूरे किए गए कार्य: ${completedTitles}।` : ''}`,
+        Bengali: `অবশ্যই। আজ আপনার ${pendingSched.length}টি কাজ বাকি রয়েছে: ${pendingTitles}।${completedSched.length > 0 ? ` সম্পন্ন কাজ: ${completedTitles}।` : ''}`,
+        Assamese: `নিশ্চয়ই। আজি আপোনাৰ ${pendingSched.length}টা কাম বাকী আছে: ${pendingTitles}।`,
+        Manipuri: `হোয়, ঙসি নহাক্কী থবক ${pendingSched.length} লোইদনা লৈরি: ${pendingTitles}।`,
+        Khasi: `Hooid. Phi don ${pendingSched.length} ki kam kiba dang sah mynta ka sngi: ${pendingTitles}.`,
+        Mizo: `Aw le. Vawiinatan hnathawh tur ${pendingSched.length} i la nei e: ${pendingTitles}.`,
+        Nagamese: `Hobi. Aji apuni laga ${pendingSched.length} activity baki ase: ${pendingTitles}.`,
+        Tripuri: `Hobei. Nini aji ${pendingSched.length} activity baki tongkha: ${pendingTitles}.`
+      };
+    } else {
+      taskBreakdownMsg = {
+        English: "All your activities for today are completed! You have no remaining tasks.",
+        Hindi: "आज की आपकी सभी गतिविधियाँ पूरी हो चुकी हैं! आपका कोई भी कार्य बाकी नहीं है।",
+        Bengali: "আজকের আপনার সব কাজ সম্পন্ন হয়েছে! আপনার কোনো বাকি কাজ নেই।",
+        Assamese: "আজিৰ আপোনাৰ সকলো কাম সম্পূৰ্ণ হ’ল!",
+        Manipuri: "ঙসিগী নহাক্কী থবক পুম্নমক লোইশিনখ্রে!",
+        Khasi: "Ki kam baroh jong phi ha ka sngi la pyndep!",
+        Mizo: "Vawiin a i hnathawh tur zawng zawng i ti zo tawh e!",
+        Nagamese: "Aji laga apuni laga sob activity complete hoise!",
+        Tripuri: "Nini aji sob activity complete hoikena tongkha!"
+      };
+    }
+
+    return {
+      intent: 'MY_DAY_QUERY',
+      path: '/day',
+      response: getLangStr(taskBreakdownMsg)
+    };
+  }
+
+  // =========================================================================
+  // 8. MEMORIES SECTION & PHOTO MEMORIES
+  // =========================================================================
+  const isMemorySectionQuery = (
+    matchesAny([
+      'favorite memory', 'best memory', 'family memory', 'birthday memory',
+      'about memory', 'about memories', 'show memory', 'show memories',
+      'show me my memories', 'open my memories', 'take me to my memories',
+      'yaadein dikhao', 'yaad batao', 'স্মৃতি বলুন', 'স্মৃতি ব্যাখ্যা', 'স্মৃতি দেখাও'
+    ]) || (
+      matchesAny(['memories', 'memory', 'yaad', 'yaaden', 'স্মৃতি', 'মেমরি']) &&
+      matchesAny(['show', 'open', 'take me', 'view', 'favorite', 'family', 'birthday', 'picnic', 'photo', 'photos'])
+    )
+  );
+
+  if (isMemorySectionQuery) {
+    const isNavReq = matchesAny(['open', 'go to', 'take me to', 'kholo', 'chalo', 'dikhao', 'show']);
+
+    if (memories.length === 0) {
+      return {
+        intent: isNavReq ? 'OPEN_MEMORIES' : 'MEMORY_QUERY',
+        path: '/memories',
+        response: getLangStr({
+          English: "You haven't saved any memories in your collection yet. You can add photos and special moments on the Memories page.",
+          Hindi: "आपने अभी तक अपनी मेमोरीज़ संग्रह में कोई यादें नहीं सहेजी हैं।",
+          Bengali: "আপনি এখনও আপনার স্মৃতি সংগ্রহে কোনো স্মৃতি সংরক্ষণ করেননি।",
+          Assamese: "আপুনি এতিয়ালৈকে কোনো স্মৃতি সংৰক্ষণ কৰা নাই।",
+          Manipuri: "নহাক্না হージュিকফাওবা মেমোরী ফোল্ডারদা মেমোরী হাপতদ্রি।",
+          Khasi: "Phi khlem pat buh jingkynmaw ha ka jinglum jong phi.",
+          Mizo: "Hriatrengna i la vawng miah lo.",
+          Nagamese: "Apuni aji tak kunuba memory save kura nai.",
+          Tripuri: "Nini khapang te choki chhengla memory tongya."
+        })
+      };
+    }
+
+    let targetMem: any = null;
+    if (matchesAny(['favorite', 'best', 'top', 'pyaari', 'pria', 'पसंदीदा', 'পছন্দের'])) {
+      targetMem = memories.find((m: any) => m.category === 'Favorites' || m.isFavorite) || memories[0];
+    } else {
+      const keywords = ['family', 'birthday', 'picnic', 'wedding', 'trip', 'park', 'children', 'daughter', 'son', 'house', 'diwali', 'puja', 'festival', 'holiday'];
+      const matchedKeyword = keywords.find(k => norm.includes(k));
+      if (matchedKeyword) {
+        targetMem = memories.find((m: any) =>
+          (m.title + ' ' + (m.description || '') + ' ' + (m.people || '') + ' ' + (m.category || '')).toLowerCase().includes(matchedKeyword)
+        );
+      }
+    }
+    if (!targetMem) targetMem = memories[0];
+
+    const memTitle = targetMem.title || 'Special Moment';
+    const memDesc = targetMem.description || '';
+    const memPeople = targetMem.people || '';
+
+    let explanation = `I found your memory titled "${memTitle}". ${memDesc ? memDesc + '.' : 'It records a meaningful moment.'} ${memPeople ? 'With ' + memPeople + '.' : ''}`;
+    if (lang === 'Hindi') {
+      explanation = `मुझे आपकी याद मिली: "${memTitle}"। ${memDesc ? memDesc + '।' : 'यह एक विशेष पल है।'} ${memPeople ? 'साथ में: ' + memPeople + '।' : ''}`;
+    } else if (lang === 'Bengali') {
+      explanation = `আমি আপনার স্মৃতি পেয়েছি: "${memTitle}"। ${memDesc ? memDesc + '।' : 'এটি একটি বিশেষ মুহূর্ত।'} ${memPeople ? 'সাথে: ' + memPeople + '।' : ''}`;
+    } else if (lang === 'Assamese') {
+      explanation = `মই আপোনাৰ স্মৃতি পালোঁ: "${memTitle}"। ${memDesc ? memDesc + '।' : 'ই এটা বিশেষ মুহূৰ্ত।'} ${memPeople ? 'লগত: ' + memPeople + '।' : ''}`;
+    }
+
+    if (isNavReq) {
+      explanation = (lang === 'Hindi' ? 'आपकी यादें खोली जा रही हैं। ' : lang === 'Bengali' ? 'আপনার স্মৃতিগুলি খোলা হচ্ছে। ' : 'Opening your memories. ') + explanation;
+    }
+
+    return {
+      intent: isNavReq ? 'OPEN_MEMORIES' : 'MEMORY_QUERY',
+      path: '/memories',
+      response: explanation,
+      memoryData: targetMem,
+      selectedMemoryId: targetMem.id
+    };
+  }
+
+  // =========================================================================
+  // 9. REMINDER QUERY (INFORMATION)
+  // =========================================================================
+  const isReminderQuery = matchesAny([
+    'what reminders do i have', 'when is my next reminder', 'which reminders are pending',
+    'show my reminders', 'my medicine reminders', 'what reminders', 'reminder schedule',
+    'upcoming reminders'
+  ]);
+
+  if (isReminderQuery) {
+    const upcomingRems = reminders.filter((r: any) => r.status !== 'Completed');
+    let remMsg: Record<string, string>;
+
+    if (upcomingRems.length > 0) {
+      const titles = upcomingRems.map((r: any) => `${r.title} at ${r.time}`).join(', ');
+      remMsg = {
+        English: `You have ${upcomingRems.length} upcoming reminder${upcomingRems.length > 1 ? 's' : ''}: ${titles}.`,
+        Hindi: `आपके पास ${upcomingRems.length} आगामी रिमाइंडर हैं: ${titles}।`,
+        Bengali: `আপনার ${upcomingRems.length}টি আসন্ন অনুস্মারক রয়েছে: ${titles}।`,
+        Assamese: `আপোনাৰ ${upcomingRems.length} টা বাকী থকা ৰিমাইণ্ডাৰ আছে: ${titles}।`,
+        Manipuri: `নহাক্কী অহা রিমাঈন্ডর ${upcomingRems.length} লৈরি: ${titles}।`,
+        Khasi: `Phi don ${upcomingRems.length} ki reminder: ${titles}.`,
+        Mizo: `Hriattirna ${upcomingRems.length} i nei e: ${titles}.`,
+        Nagamese: `Apuni laga ${upcomingRems.length} reminder ase: ${titles}.`,
+        Tripuri: `Nini ${upcomingRems.length} reminder tongkha: ${titles}.`
+      };
+    } else {
+      remMsg = {
+        English: "You don't have any pending reminders scheduled for today.",
+        Hindi: "आपके पास आज के लिए कोई लंबित रिमाइंडर नहीं है।",
+        Bengali: "আজকের জন্য আপনার কোনো বাকি অনুস্মারক নেই।",
+        Assamese: "আজিৰ বাবে আপোনাৰ কোনো ৰিমাইণ্ডাৰ বাকী নাই।",
+        Manipuri: "ঙসিগী রিমাঈন্ডর লৈতাদ্রে।",
+        Khasi: "Khlem don reminder mynta ka sngi.",
+        Mizo: "Vawiin atan hriattirna a awm lo e.",
+        Nagamese: "Aji baki reminder nai.",
+        Tripuri: "Aji baki reminder tongya."
+      };
+    }
+
+    return {
+      intent: 'REMINDER_QUERY',
+      path: '/reminders',
+      response: getLangStr(remMsg)
+    };
+  }
+
+  return null;
+}
+
 function parseDeterministicCommand(
   clean: string,
   currentLang: string,
   contextData: any = {},
-  voiceContext: any = null
+  _voiceContext: any = null
 ): any | null {
   const profile = contextData.profile || {};
   const userName = profile.name || 'Ravi';
@@ -30,30 +574,6 @@ function parseDeterministicCommand(
   }
   norm = dedupedWords.join(' ');
 
-  // 3. CONFIRMATION HANDLERS
-  if (voiceContext) {
-    if (voiceContext.intent === 'CONFIRM_DELETE') {
-      const positiveWords = ['yes', 'confirm', 'haan', 'sure', 'delete', 'do it', 'thik hai', 'joma', 'okay', 'ok', 'yep', 'yeah', 'confirm delete'];
-      const negativeWords = ['no', 'cancel', 'dont', 'keep', 'na', 'never', 'stop'];
-      
-      const isPositive = positiveWords.some(w => norm.includes(w));
-      const isNegative = negativeWords.some(w => norm.includes(w));
-
-      if (isPositive) {
-        return {
-          intent: voiceContext.deleteIntent,
-          parameters: { entityId: voiceContext.entityId, confirmed: true },
-          response: language === 'Hindi' ? 'इसे हटा दिया गया है।' : language === 'Bengali' ? 'এটি মুছে ফেলা হয়েছে।' : 'It has been deleted.'
-        };
-      } else if (isNegative) {
-        return {
-          intent: 'CONVERSATION',
-          response: language === 'Hindi' ? 'ठीक है, मैंने इसे नहीं हटाया।' : language === 'Bengali' ? 'ঠিক আছে, मैं इसे नहीं हटाया।' : 'Okay, I kept it.'
-        };
-      }
-    }
-  }
-
   // --- STT / FILLER WORDS REMOVAL FOR CORE SEMANTIC EXTRACTION ---
   const fillers = [
     'please', 'can you', 'could you', 'would you', 'i want to', 'i need to',
@@ -68,6 +588,16 @@ function parseDeterministicCommand(
     semanticCore = semanticCore.replace(new RegExp('\\b' + f + '\\b', 'g'), '');
   });
   semanticCore = semanticCore.replace(/\s+/g, ' ').trim();
+
+  // --- RUN PATIENT AI QUERY RESOLVER FIRST ---
+  const aiResolved = patientAIQueryResolver(norm, semanticCore, language, {
+    profile: profile || storageService.getCurrentUser(),
+    reminders: reminders.length > 0 ? reminders : storageService.getReminders(),
+    schedule: schedule.length > 0 ? schedule : storageService.getSchedule(),
+    memories: memories.length > 0 ? memories : storageService.getMemories(),
+    games: contextData.games || storageService.getGames()
+  });
+  if (aiResolved) return aiResolved;
 
   // --- SYNONYM RESOLUTION HELPER ---
   const matchesAny = (str: string, keywords: string[]): boolean => {

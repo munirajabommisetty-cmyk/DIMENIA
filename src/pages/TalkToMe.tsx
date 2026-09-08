@@ -146,30 +146,17 @@ export const TalkToMe: React.FC = () => {
           refreshMemories: () => {},
           navigate: (path: string, state?: any) => {
             try {
-              console.log(`[DIAGNOSTIC] 11. callbacks.navigate ENTERED: "${path}"`);
               if (path === '-1') {
                 navigate(-1);
                 return;
               }
-              console.log(`[DIAGNOSTIC] 12. URL BEFORE: "${window.location.href}", hash: "${window.location.hash}"`);
-              console.log("[VOICE NAV] TalkToMe.tsx navigate callback triggered. Path:", path);
+              console.log(`[VOICE NAV] TalkToMe.tsx immediate navigate to: "${path}"`, state);
               setStatus('success');
-              setDialogText(parsed.response);
-              setTimeout(() => {
-                try {
-                  console.log(`[DIAGNOSTIC] 13. React navigate called: "${path}"`);
-                  navigate(path, state);
-                  if (window.location.hash !== '#' + path && path.startsWith('/')) {
-                    console.log("[VOICE NAV] HashRouter fallback trigger. Hash:", '#' + path);
-                    window.location.hash = '#' + path;
-                  }
-                  console.log(`[DIAGNOSTIC] 14. URL AFTER: "${window.location.href}", hash: "${window.location.hash}"`);
-                } catch (navErr: any) {
-                  console.error('[DIAGNOSTIC] ERROR in navigation inside timeout:', navErr);
-                }
-              }, 1500);
+              if (parsed.response) setDialogText(parsed.response);
+              const navOptions = state ? (state.state !== undefined ? state : { state }) : undefined;
+              navigate(path, navOptions);
             } catch (navErr: any) {
-              console.error('[DIAGNOSTIC] ERROR in navigation:', navErr);
+              console.error('[VOICE NAV] ERROR in TalkToMe navigation:', navErr);
             }
           },
           setActiveCall: (name: string | null) => {
@@ -442,72 +429,127 @@ export const TalkToMe: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Dialog Panel */}
-      <div className="bg-white rounded-3xl p-8 border border-brand-purpleLight shadow-sm flex flex-col items-center justify-center text-center space-y-6 min-h-[300px]">
-        <h2 className="text-2xl font-bold text-brand-navy leading-relaxed max-w-md">
+      {/* Main Dialog Panel - Warm, glowing Home Voice Assistant style */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/15 border-2 border-amber-300/80 p-6 sm:p-8 shadow-lg shadow-amber-500/5 flex flex-col items-center justify-center text-center space-y-6 min-h-[320px]">
+        {/* Soft glowing ambient circle */}
+        <div className="absolute -right-16 -top-16 w-56 h-56 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
+        
+        <h2 className="text-2xl font-bold text-amber-950 leading-relaxed max-w-md relative z-10">
           {dialogText}
         </h2>
 
         {lastCommand && (
-          <p className="text-brand-purple font-semibold bg-brand-purpleLight px-4 py-1.5 rounded-full text-sm">
+          <p className="text-amber-900 font-semibold bg-amber-100/90 border border-amber-200 px-4 py-1.5 rounded-full text-sm shadow-2xs relative z-10">
             {t('voice.youSaid')}: "{lastCommand}"
           </p>
         )}
 
         {/* Dynamic states & inputs */}
         {status === 'unsupported' ? (
-          <div className="w-full max-w-md space-y-4">
+          <div className="w-full max-w-md space-y-4 relative z-10">
             <form onSubmit={handleTextInputSubmit} className="w-full flex gap-2">
               <input
                 type="text"
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 placeholder="Type your command here..."
-                className="flex-1 px-4 py-3 rounded-xl border border-brand-purpleLight focus:outline-none focus:border-brand-purple font-semibold text-brand-navy"
+                className="flex-1 px-4 py-3 rounded-xl border border-amber-200 bg-white focus:outline-none focus:border-amber-500 font-semibold text-amber-950"
               />
-              <button type="submit" className="p-3 bg-brand-purple text-white rounded-xl hover:bg-opacity-95">
+              <button type="submit" className="p-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 transition-colors">
                 <Send className="w-5 h-5" />
               </button>
             </form>
           </div>
         ) : (
-          <div className="w-full max-w-md flex flex-col items-center space-y-6">
-            <div className="relative">
+          <div className="w-full max-w-md flex flex-col items-center space-y-5 relative z-10">
+            {/* Mic button with glowing ring */}
+            <div className="relative flex items-center justify-center">
               {status === 'listening' && (
-                <span className="absolute inset-0 rounded-full bg-brand-purple opacity-20 animate-ping" />
+                <>
+                  <span className="absolute w-36 h-36 rounded-full bg-rose-500/20 animate-ping" />
+                  <span className="absolute w-32 h-32 rounded-full bg-rose-500/30 animate-pulse" />
+                </>
+              )}
+              {status === 'processing' && (
+                <span className="absolute w-32 h-32 rounded-full bg-amber-500/30 animate-ping" />
               )}
               <button
                 onClick={handleMicToggle}
-                className={`w-28 h-28 rounded-full flex items-center justify-center transition-all duration-300 shadow-md ${
+                className={`relative z-10 w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl border-4 ${
                   status === 'listening' 
-                    ? 'bg-brand-red text-white scale-95' 
-                    : 'bg-brand-purple text-white hover:bg-opacity-95 hover:scale-105 active:scale-95'
+                    ? 'bg-rose-600 border-rose-300 text-white scale-95 shadow-rose-500/40' 
+                    : status === 'processing'
+                    ? 'bg-amber-500 border-amber-200 text-white animate-pulse shadow-amber-500/40'
+                    : status === 'success'
+                    ? 'bg-emerald-600 border-emerald-300 text-white shadow-emerald-500/40'
+                    : 'bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-600 border-amber-200 text-white hover:scale-105 active:scale-95 shadow-amber-500/30'
                 }`}
+                aria-label={status === 'listening' ? 'Stop listening' : 'Tap to talk'}
               >
                 {status === 'listening' ? (
-                  <MicOff className="w-12 h-12" />
+                  <MicOff className="w-11 h-11 animate-pulse" />
                 ) : (
-                  <Mic className="w-12 h-12" />
+                  <Mic className="w-11 h-11" />
                 )}
               </button>
             </div>
 
-            <span className="text-sm font-bold text-brand-purple uppercase tracking-wider animate-pulse">
-              {status === 'listening' ? `Listening... Speak now (${recordingSeconds}s)` : 'Tap button to talk'}
-            </span>
+            {/* Pill Badge */}
+            <div className="flex flex-col items-center gap-1">
+              <span className={`text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full border shadow-2xs ${
+                status === 'listening'
+                  ? 'bg-rose-100 text-rose-800 border-rose-200 animate-pulse'
+                  : status === 'processing'
+                  ? 'bg-amber-100 text-amber-900 border-amber-300 animate-bounce'
+                  : status === 'success'
+                  ? 'bg-emerald-100 text-emerald-900 border-emerald-200'
+                  : 'bg-amber-100/80 text-amber-900 border-amber-200'
+              }`}>
+                {status === 'listening' ? `Listening... (${recordingSeconds}s)` :
+                 status === 'processing' ? 'Thinking...' :
+                 status === 'success' ? 'Understood' :
+                 'Tap button to talk'}
+              </span>
+              <span className="text-xs font-bold text-amber-900/70">
+                {status === 'listening' ? 'Speak clearly into your device' :
+                 status === 'processing' ? 'Understanding your request' :
+                 'Tap microphone to speak to ALPINE'}
+              </span>
+            </div>
 
-            {/* Always provide a text command fallback bar below the mic, or show on error/idle states */}
+            {/* Animated Waveform Visualizer */}
+            <div className="flex items-center justify-center gap-1.5 h-6 px-4 w-full">
+              {status === 'listening' ? (
+                <>
+                  <span className="w-1.5 h-5 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                  <span className="w-1.5 h-8 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  <span className="w-1.5 h-4 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                  <span className="w-1.5 h-7 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                  <span className="w-1.5 h-5 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '0.5s' }} />
+                </>
+              ) : status === 'processing' ? (
+                <div className="flex gap-2">
+                  <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                  <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                  <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                </div>
+              ) : (
+                <div className="w-36 h-1 bg-amber-300/40 rounded-full opacity-60" />
+              )}
+            </div>
+
+            {/* Fallback Input */}
             {showFallbackInput && (status === 'idle' || status === 'denied' || status === 'error' || status === 'processing' || status === 'success') && (
-              <div className="w-full space-y-4 pt-4 border-t border-brand-purpleLight">
+              <div className="w-full space-y-4 pt-4 border-t border-amber-200/60">
                 <form onSubmit={handleTextInputSubmit} className="w-full flex gap-2">
                   <input
                     type="text"
                     value={textInput}
                     onChange={(e) => setTextInput(e.target.value)}
                     placeholder="Or type your command here..."
-                    className="flex-1 px-4 py-3 rounded-xl border border-brand-purpleLight focus:outline-none focus:border-brand-purple font-semibold text-brand-navy"
+                    className="flex-1 px-4 py-3 rounded-xl border border-amber-200 bg-white focus:outline-none focus:border-amber-500 font-semibold text-amber-950"
                   />
-                  <button type="submit" className="p-3 bg-brand-purple text-white rounded-xl hover:bg-opacity-95">
+                  <button type="submit" className="p-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 transition-colors">
                     <Send className="w-5 h-5" />
                   </button>
                 </form>
@@ -516,7 +558,7 @@ export const TalkToMe: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowManualForm(!showManualForm)}
-                    className="px-4 py-2 text-xs bg-brand-purpleLight text-brand-purple rounded-xl font-bold hover:bg-brand-purple hover:text-white transition-all"
+                    className="px-4 py-2 text-xs bg-amber-100 text-amber-900 border border-amber-200 rounded-xl font-bold hover:bg-amber-200 transition-all"
                   >
                     {showManualForm ? 'Hide Manual Form' : 'Or Create Activity Manually'}
                   </button>

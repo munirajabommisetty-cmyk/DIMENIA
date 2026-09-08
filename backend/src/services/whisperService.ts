@@ -1,190 +1,219 @@
-import { execFile } from 'child_process';
-import path from 'path';
-import fs from 'fs';
+const HF_BASE_URL =
+  'https://hemanthdfdgh-dimentiacare-whisper.hf.space';
 
-const getWhisperDir = (): string => {
-  let dir = path.resolve(process.cwd(), 'models', 'whisper');
-  if (
-    fs.existsSync(path.join(dir, 'whisper-cli.exe')) ||
-    fs.existsSync(path.join(dir, 'whisper-cli')) ||
-    fs.existsSync(path.join(dir, 'main.exe')) ||
-    fs.existsSync(path.join(dir, 'main'))
-  ) {
-    return dir;
+const HF_UPLOAD_URL = `${HF_BASE_URL}/gradio_api/upload`;
+const HF_TRANSCRIBE_URL = `${HF_BASE_URL}/gradio_api/call/v2/transcribe`;
+const HF_RESULT_URL = `${HF_BASE_URL}/gradio_api/call/transcribe`;
+
+const HF_TOKEN = process.env.HF_TOKEN;
+
+function hfAuthHeaders(): Record<string, string> {
+  if (!HF_TOKEN) {
+    throw new Error(
+      'HF_TOKEN is not configured. Please configure the Hugging Face token in the backend environment.'
+    );
   }
-  dir = path.resolve(process.cwd(), 'backend', 'models', 'whisper');
-  if (
-    fs.existsSync(path.join(dir, 'whisper-cli.exe')) ||
-    fs.existsSync(path.join(dir, 'whisper-cli')) ||
-    fs.existsSync(path.join(dir, 'main.exe')) ||
-    fs.existsSync(path.join(dir, 'main'))
-  ) {
-    return dir;
-  }
-  dir = path.resolve(__dirname, '..', '..', 'models', 'whisper');
-  if (
-    fs.existsSync(path.join(dir, 'whisper-cli.exe')) ||
-    fs.existsSync(path.join(dir, 'whisper-cli')) ||
-    fs.existsSync(path.join(dir, 'main.exe')) ||
-    fs.existsSync(path.join(dir, 'main'))
-  ) {
-    return dir;
-  }
-  return path.resolve(process.cwd(), 'backend', 'models', 'whisper');
-};
 
-function cleanWhisperOutput(rawOutput: string): string {
-  if (!rawOutput) return '';
+  return { Authorization: `Bearer ${HF_TOKEN}` };
+}
 
-  const lines = rawOutput.split(/\r?\n/);
-  const speechLines: string[] = [];
+function extractCompleteResult(raw: string): string {
+  if (!raw) return '';
 
-  for (const line of lines) {
-    let trimmed = line.trim();
-    if (!trimmed) continue;
+  const completeMatch = raw.match(
+    /event:\s*complete\s*\r?\ndata:\s*(.+)/s
+  );
 
-    // Skip metadata / system log lines from whisper-cli
-    if (
-      trimmed.startsWith('load_backend:') ||
-      trimmed.startsWith('whisper_') ||
-      trimmed.startsWith('read_audio_data:') ||
-      trimmed.startsWith('system_info:') ||
-      trimmed.startsWith('main:') ||
-      trimmed.startsWith('ggml_') ||
-      trimmed.startsWith('llama_')
-    ) {
-      continue;
+  if (!completeMatch) return '';
+
+  try {
+    const data = JSON.parse(completeMatch[1].trim());
+
+    if (Array.isArray(data) && typeof data[0] === 'string') {
+      return data[0].trim();
     }
 
-    // Strip timestamp brackets like [00:00:00.000 --> 00:00:03.000] or [00:00.000 --> 00:03.000]
-    trimmed = trimmed.replace(/\[\d{2}:?\d{2}:\d{2}\.\d{3}\s*-->\s*\d{2}:?\d{2}:\d{2}\.\d{3}\]/g, '').trim();
-    trimmed = trimmed.replace(/\[\d{2}:\d{2}\.\d{3}\s*-->\s*\d{2}:\d{2}\.\d{3}\]/g, '').trim();
+    return '';
+  } catch (error) {
+    console.error('[STT] Failed to parse Hugging Face result:', error);
+    return '';
+  }
+}
 
-    if (trimmed.length > 0) {
-      speechLines.push(trimmed);
-    }
+async function uploadAudio(audioBuffer: Buffer): Promise<string> {
+  const blob = new Blob([audioBuffer], { type: 'audio/wav' });
+  const formData = new FormData();
+
+  formData.append('files', blob, 'audio.wav');
+
+  console.log('[STT] Uploading audio to Hugging Face...');
+
+  const response = await fetch(HF_UPLOAD_URL, {
+    method: 'POST',
+    headers: hfAuthHeaders(),
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(
+      `[STT] Hugging Face upload failed: ${response.status} ${errorText}`
+    );
+    throw new Error(`Hugging Face audio upload failed (${response.status})`);
   }
 
-  return speechLines.join(' ').trim();
+  const uploadedFiles = await response.json() as unknown;
+
+  if (
+    !Array.isArray(uploadedFiles) ||
+    typeof uploadedFiles[0] !== 'string'
+  ) {
+    throw new Error('Hugging Face returned an invalid upload response');
+  }
+
+  console.log('[STT] Audio uploaded successfully');
+  return uploadedFiles[0];
+}
+
+async function startTranscription(uploadedPath: string): Promise<string> {
+  console.log('[STT] Starting Hugging Face transcription...');
+
+  const response = await fetch(HF_TRANSCRIBE_URL, {
+    method: 'POST',
+    headers: {
+      ...hfAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      audio: {
+        path: uploadedPath,
+        meta: { _type: 'gradio.FileData' },
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(
+      `[STT] Hugging Face transcription request failed: ${response.status} ${errorText}`
+    );
+    throw new Error(
+      `Hugging Face transcription request failed (${response.status})`
+    );
+  }
+
+  const result = await response.json() as { event_id?: string };
+
+  if (!result.event_id) {
+    throw new Error('Hugging Face did not return a transcription event ID');
+  }
+
+  console.log(`[STT] Hugging Face event ID: ${result.event_id}`);
+  return result.event_id;
+}
+
+async function waitForTranscription(eventId: string): Promise<string> {
+  const resultUrl = `${HF_RESULT_URL}/${eventId}`;
+
+  console.log('[STT] Waiting for Hugging Face transcription result...');
+
+  const response = await fetch(resultUrl, {
+    method: 'GET',
+    headers: hfAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(
+      `[STT] Hugging Face result request failed: ${response.status} ${errorText}`
+    );
+    throw new Error(
+      `Hugging Face transcription result failed (${response.status})`
+    );
+  }
+
+  const rawResult = await response.text();
+
+  console.log('[STT] Hugging Face transcription result received');
+  console.log('[STT] Raw Hugging Face SSE result:', rawResult);
+
+  if (rawResult.includes('event: error')) {
+    const errorMatch = rawResult.match(
+      /event:\s*error\s*\r?\ndata:\s*(.+)/s
+    );
+
+    if (errorMatch) {
+      try {
+        const errorData = JSON.parse(errorMatch[1].trim()) as {
+          error?: string;
+          title?: string;
+        };
+
+        console.error('[STT] Hugging Face SSE error:', errorData);
+
+        throw new Error(
+          errorData.error ||
+          errorData.title ||
+          'Hugging Face transcription failed.'
+        );
+      } catch (error) {
+        if (error instanceof Error) throw error;
+      }
+    }
+
+    throw new Error('Hugging Face transcription failed.');
+  }
+
+  const transcript = extractCompleteResult(rawResult);
+
+  if (!transcript) {
+    console.warn('[STT] Empty transcription returned by Hugging Face');
+    throw new Error('Could not understand the speech. Please try again.');
+  }
+
+  console.log(`[STT] Transcript: "${transcript}"`);
+  return transcript;
 }
 
 export const whisperService = {
   getExecutablePath(): string | null {
-    const envPath = process.env.WHISPER_PATH;
-    if (envPath && fs.existsSync(envPath)) {
-      return envPath;
-    }
-    const dir = getWhisperDir();
-    const defaultExe = path.join(dir, 'whisper-cli.exe');
-    const alternativeExe = path.join(dir, 'main.exe');
-
-    if (fs.existsSync(defaultExe)) {
-      return defaultExe;
-    }
-    if (fs.existsSync(alternativeExe)) {
-      return alternativeExe;
-    }
     return null;
   },
 
   getModelPath(): string | null {
-    const envModel = process.env.WHISPER_MODEL;
-    if (envModel && fs.existsSync(envModel)) {
-      return envModel;
-    }
-    const dir = getWhisperDir();
-    const tinyModel = path.join(dir, 'ggml-tiny.bin');
-    if (fs.existsSync(tinyModel)) {
-      return tinyModel;
-    }
-    const defaultModel = path.join(dir, 'ggml-tiny.en.bin');
-    if (fs.existsSync(defaultModel)) {
-      return defaultModel;
-    }
-    // Search for any ggml *.bin model in WHISPER_DIR
-    if (fs.existsSync(dir)) {
-      try {
-        const files = fs.readdirSync(dir);
-        const modelFile = files.find(f => f.startsWith('ggml') && f.endsWith('.bin'));
-        if (modelFile) {
-          return path.join(dir, modelFile);
-        }
-      } catch (e) {
-        console.error('[STT] Failed to read whisper directory', e);
-      }
-    }
     return null;
   },
 
   ensureDirExists() {
-    const dir = getWhisperDir();
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+    // No local Whisper directory is required anymore.
   },
 
-  async transcribe(audioBuffer: Buffer, language?: string): Promise<string> {
-    this.ensureDirExists();
-    const exePath = this.getExecutablePath();
-    const modelPath = this.getModelPath();
-
-    console.log('[STT] Transcription request received');
+  async transcribe(
+    audioBuffer: Buffer,
+    language?: string
+  ): Promise<string> {
+    console.log('[STT] ========================================');
+    console.log('[STT] Hugging Face Whisper transcription');
+    console.log('[STT] ========================================');
     console.log(`[STT] WAV size: ${audioBuffer.length} bytes`);
-    console.log('[STT] WAV format: PCM16 mono 16000Hz');
+    console.log(`[STT] Requested language: ${language || 'en'}`);
 
-    if (!exePath || !modelPath) {
-      console.error(`[STT] Error: Whisper executable or model not found. EXE: ${exePath}, Model: ${modelPath}`);
-      throw new Error(`Whisper model or executable not found. Configured EXE: ${exePath || 'Not found'}, Model: ${modelPath || 'Not found'}`);
+    if (!audioBuffer || audioBuffer.length === 0) {
+      throw new Error('No audio data received.');
     }
 
-    console.log(`[STT] Model: ${modelPath}`);
+    try {
+      const uploadedPath = await uploadAudio(audioBuffer);
+      const eventId = await startTranscription(uploadedPath);
+      return await waitForTranscription(eventId);
+    } catch (error) {
+      console.error('[STT] Hugging Face Whisper error:', error);
 
-    const tempDir = path.resolve(process.cwd(), 'temp');
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
+      if (error instanceof Error) throw error;
+
+      throw new Error(
+        'Speech transcription failed. Please try again.'
+      );
     }
-
-    const tempAudioPath = path.join(tempDir, `audio_${Date.now()}.wav`);
-    fs.writeFileSync(tempAudioPath, audioBuffer);
-
-    // Determine ISO-639-1 language code: default to 'en'
-    const langCode = (language && language.trim().length > 0) ? language.trim() : 'en';
-
-    return new Promise((resolve, reject) => {
-      // -nt strips timestamps, -l sets language code
-      const args = ['-m', modelPath, '-f', tempAudioPath, '-nt', '-l', langCode];
-      console.log('[STT] Whisper process started');
-
-      execFile(exePath, args, { encoding: 'utf8' }, (error, stdout, stderr) => {
-        const exitCode = error ? (error.code || 1) : 0;
-        console.log(`[STT] Whisper exit code: ${exitCode}`);
-        if (stdout) console.log(`[STT] Raw output received`);
-        if (stderr && exitCode !== 0) console.log(`[STT] Whisper stderr: ${stderr.slice(0, 300)}`);
-
-        // Cleanup temporary audio file
-        try {
-          if (fs.existsSync(tempAudioPath)) {
-            fs.unlinkSync(tempAudioPath);
-          }
-        } catch (e) {
-          console.error('[STT] Failed to delete temp audio file', e);
-        }
-
-        if (error) {
-          console.error('[STT] Whisper execution error:', error);
-          return reject(new Error(`Whisper execution failed with exit code ${exitCode}`));
-        }
-
-        const cleanTranscript = cleanWhisperOutput(stdout);
-        if (!cleanTranscript) {
-          console.warn('[STT] Empty speech output after cleaning metadata');
-          return reject(new Error('Could not understand the speech. Please try again.'));
-        }
-
-        console.log(`[STT] Clean transcript: "${cleanTranscript}"`);
-        resolve(cleanTranscript);
-      });
-    });
-  }
+  },
 };
-
