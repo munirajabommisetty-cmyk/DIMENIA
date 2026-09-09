@@ -8,17 +8,44 @@ const execFileAsync = promisify(execFile);
 
 export const whisperService = {
   getExecutablePath(): string | null {
-    const candidates = [
+    const isWindows = process.platform === 'win32';
+
+    const winCandidates = [
       path.resolve(process.cwd(), 'models/whisper/whisper-cli.exe'),
       path.resolve(process.cwd(), 'backend/models/whisper/whisper-cli.exe'),
       path.resolve(__dirname, '../../models/whisper/whisper-cli.exe'),
       path.resolve(__dirname, '../../../models/whisper/whisper-cli.exe'),
+      path.resolve(process.cwd(), 'models/whisper/main.exe'),
+      path.resolve(process.cwd(), 'backend/models/whisper/main.exe')
+    ];
+
+    const unixCandidates = [
       path.resolve(process.cwd(), 'models/whisper/whisper-cli'),
       path.resolve(process.cwd(), 'backend/models/whisper/whisper-cli'),
-      path.resolve(__dirname, '../../models/whisper/whisper-cli')
+      path.resolve(__dirname, '../../models/whisper/whisper-cli'),
+      path.resolve(__dirname, '../../../models/whisper/whisper-cli'),
+      path.resolve(process.cwd(), 'models/whisper/main'),
+      path.resolve(process.cwd(), 'backend/models/whisper/main'),
+      path.resolve(__dirname, '../../models/whisper/main'),
+      path.resolve(__dirname, '../../../models/whisper/main')
     ];
+
+    // On Windows, check .exe candidates first. On Linux/macOS, evaluate ONLY Unix binaries (ignore .exe files).
+    const candidates = isWindows
+      ? [...winCandidates, ...unixCandidates]
+      : [...unixCandidates];
+
     for (const p of candidates) {
-      if (fs.existsSync(p)) return p;
+      if (fs.existsSync(p)) {
+        if (!isWindows) {
+          try {
+            fs.chmodSync(p, 0o755);
+          } catch (e) {
+            console.warn(`[STT] Could not set executable permissions on ${p}:`, e);
+          }
+        }
+        return p;
+      }
     }
     return null;
   },
@@ -54,6 +81,7 @@ export const whisperService = {
     console.log('[STT] ========================================');
     console.log('[STT] Local Hugging Face / GGML Whisper Offline STT');
     console.log('[STT] ========================================');
+    console.log(`[STT] OS Platform: ${process.platform}`);
     console.log(`[STT] Audio Buffer size: ${audioBuffer.length} bytes`);
     console.log(`[STT] Requested language: ${language || 'en'}`);
 
@@ -64,8 +92,13 @@ export const whisperService = {
     const exePath = this.getExecutablePath();
     const modelPath = this.getModelPath();
 
+    console.log(`[STT] Whisper Executable: ${exePath || 'NOT FOUND'}`);
+    console.log(`[STT] Whisper Model: ${modelPath || 'NOT FOUND'}`);
+    console.log(`[STT] Executable Exists: ${exePath ? fs.existsSync(exePath) : false}`);
+    console.log(`[STT] Model Exists: ${modelPath ? fs.existsSync(modelPath) : false}`);
+
     if (!exePath || !modelPath) {
-      console.error('[STT] Local Whisper CLI executable or model binary missing.', { exePath, modelPath });
+      console.error('[STT] Local Whisper CLI executable or model binary missing.', { exePath, modelPath, platform: process.platform });
       throw new Error('Local Whisper model or executable is missing in the backend/models/whisper folder.');
     }
 
