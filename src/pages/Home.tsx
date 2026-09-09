@@ -954,10 +954,10 @@ export const Home: React.FC = () => {
           setVoiceText('Microphone recording produced no audio. Please speak louder.');
         } else if (err === 'model-missing') {
           setVoiceStatus('offline');
-          setVoiceText('Local Whisper model or executable is missing in the backend folder.');
+          setVoiceText('Voice input is using offline mode. You can type your command below.');
         } else if (err === 'service-unavailable' || err === 'network') {
           setVoiceStatus('offline');
-          setVoiceText('Voice service is unavailable. Please check if the local backend server is running.');
+          setVoiceText('Voice input is using offline mode. You can type your command below.');
         } else {
           setVoiceStatus('error');
           setVoiceText('Voice recognition failed or process execution failed.');
@@ -1916,16 +1916,16 @@ export const Home: React.FC = () => {
       {/* Quick Actions Grid */}
       <div>
         <h3 className="text-xl font-bold text-brand-navy mb-4">{t('home.quickActions')}</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           
           {/* Action 1: Brain Games */}
           <div 
             onClick={() => navigate('/games')}
-            className="group bg-brand-purpleLight border border-brand-purpleLight p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
+            className="group bg-brand-purpleLight border border-brand-purpleLight p-4 sm:p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
           >
-            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-700 text-white flex items-center justify-center mb-4 shadow-md shadow-purple-500/25 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
+            <div className="w-14 h-14 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-700 text-white flex items-center justify-center mb-3 sm:mb-4 shadow-md shadow-purple-500/25 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-              <svg className="w-10 h-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Brain Games Icon">
+              <svg className="w-8 h-8 sm:w-10 sm:h-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Brain Games Icon">
                 <path d="M12 9C9.79086 9 8 10.7909 8 13C8 13.9 8.3 14.7 8.8 15.3C7.2 16.1 6 17.9 6 20C6 22.7614 8.23858 25 11 25C11.6 25 12.2 24.9 12.8 24.7C13.6 26.1 15.2 27 17 27H18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M20 9C22.2091 9 24 10.7909 24 13C24 13.7 23.8 14.3 23.4 14.9" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M16 7V25" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 2"/>
@@ -1934,8 +1934,8 @@ export const Home: React.FC = () => {
               </svg>
             </div>
             <h4 className="font-bold text-lg text-brand-navy">{t('nav.brainGames')}</h4>
-            <p className="text-sm text-brand-grayText mt-2 flex-1">Play and train your brain with puzzles</p>
-            <span className="text-brand-purple text-sm font-bold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+            <p className="text-sm text-brand-grayText mt-1 sm:mt-2 flex-1">Play and train your brain with puzzles</p>
+            <span className="text-brand-purple text-sm font-bold mt-3 sm:mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
               {t('home.startTraining')} <ChevronRight className="w-4 h-4" />
             </span>
           </div>
@@ -1943,11 +1943,11 @@ export const Home: React.FC = () => {
           {/* Action 2: My Day */}
           <div 
             onClick={() => navigate('/day')}
-            className="group bg-brand-greenBg border border-brand-greenBg p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
+            className="group bg-brand-greenBg border border-brand-greenBg p-4 sm:p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
           >
-            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-green-700 text-white flex items-center justify-center mb-4 shadow-md shadow-emerald-500/25 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
+            <div className="w-14 h-14 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-green-700 text-white flex items-center justify-center mb-3 sm:mb-4 shadow-md shadow-emerald-500/25 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-              <svg className="w-10 h-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="My Day Icon">
+              <svg className="w-8 h-8 sm:w-10 sm:h-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="My Day Icon">
                 <rect x="5" y="8" width="22" height="19" rx="3.5" stroke="currentColor" strokeWidth="2.2" fill="currentColor" fillOpacity="0.15"/>
                 <line x1="5" y1="14" x2="27" y2="14" stroke="currentColor" strokeWidth="2"/>
                 <line x1="10" y1="6" x2="10" y2="9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
@@ -1957,8 +1957,8 @@ export const Home: React.FC = () => {
               </svg>
             </div>
             <h4 className="font-bold text-lg text-brand-navy">{t('nav.myDay')}</h4>
-            <p className="text-sm text-brand-grayText mt-2 flex-1">View your schedule & complete tasks</p>
-            <span className="text-brand-green text-sm font-bold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+            <p className="text-sm text-brand-grayText mt-1 sm:mt-2 flex-1">View your schedule & complete tasks</p>
+            <span className="text-brand-green text-sm font-bold mt-3 sm:mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
               {t('home.viewSchedule')} <ChevronRight className="w-4 h-4" />
             </span>
           </div>
@@ -1966,11 +1966,11 @@ export const Home: React.FC = () => {
           {/* Action 3: Memories */}
           <div 
             onClick={() => navigate('/memories')}
-            className="group bg-brand-orangeBg border border-brand-orangeBg p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
+            className="group bg-brand-orangeBg border border-brand-orangeBg p-4 sm:p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
           >
-            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 text-white flex items-center justify-center mb-4 shadow-md shadow-amber-500/25 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
+            <div className="w-14 h-14 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 text-white flex items-center justify-center mb-3 sm:mb-4 shadow-md shadow-amber-500/25 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-              <svg className="w-10 h-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Memories Icon">
+              <svg className="w-8 h-8 sm:w-10 sm:h-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Memories Icon">
                 <rect x="5" y="6" width="22" height="20" rx="3.5" stroke="currentColor" strokeWidth="2.2" fill="currentColor" fillOpacity="0.15"/>
                 <circle cx="11" cy="12" r="2.5" fill="currentColor"/>
                 <path d="M7 22L13 15L17 19L20 16L25 22H7Z" fill="currentColor" fillOpacity="0.7"/>
@@ -1979,8 +1979,8 @@ export const Home: React.FC = () => {
               </svg>
             </div>
             <h4 className="font-bold text-lg text-brand-navy">{t('nav.memories')}</h4>
-            <p className="text-sm text-brand-grayText mt-2 flex-1">Browse your beautiful memories and photos</p>
-            <span className="text-brand-orange text-sm font-bold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+            <p className="text-sm text-brand-grayText mt-1 sm:mt-2 flex-1">Browse your beautiful memories and photos</p>
+            <span className="text-brand-orange text-sm font-bold mt-3 sm:mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
               {t('nav.memories')} <ChevronRight className="w-4 h-4" />
             </span>
           </div>
@@ -1988,11 +1988,11 @@ export const Home: React.FC = () => {
           {/* Action 4: Help */}
           <div 
             onClick={() => navigate('/help')}
-            className="group bg-brand-redBg border border-brand-redBg p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
+            className="group bg-brand-redBg border border-brand-redBg p-4 sm:p-6 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all duration-200 flex flex-col h-full"
           >
-            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-rose-500 via-red-600 to-rose-700 text-white flex items-center justify-center mb-4 shadow-md shadow-rose-500/25 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
+            <div className="w-14 h-14 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-rose-500 via-red-600 to-rose-700 text-white flex items-center justify-center mb-3 sm:mb-4 shadow-md shadow-rose-500/25 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-              <svg className="w-10 h-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Contact Family Icon">
+              <svg className="w-8 h-8 sm:w-10 sm:h-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Contact Family Icon">
                 <path d="M7 10C7 8.34315 8.34315 7 10 7H14C15.6569 7 17 8.34315 17 10V12C17 13.6569 15.6569 15 14 15H10C8.34315 15 7 13.6569 7 12V10Z" stroke="currentColor" strokeWidth="2.2" fill="currentColor" fillOpacity="0.15"/>
                 <path d="M6 14C6 19.5228 10.4772 24 16 24H18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
                 <circle cx="21" cy="20" r="6.5" fill="#FFFFFF" stroke="#E11D48" strokeWidth="1.5"/>
@@ -2000,8 +2000,8 @@ export const Home: React.FC = () => {
               </svg>
             </div>
             <h4 className="font-bold text-lg text-brand-navy">{t('nav.help')}</h4>
-            <p className="text-sm text-brand-grayText mt-2 flex-1">Reach out for immediate emergency aid</p>
-            <span className="text-brand-red text-sm font-bold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+            <p className="text-sm text-brand-grayText mt-1 sm:mt-2 flex-1">Reach out for immediate emergency aid</p>
+            <span className="text-brand-red text-sm font-bold mt-3 sm:mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
               {t('home.emergencyContact')} <ChevronRight className="w-4 h-4" />
             </span>
           </div>
@@ -2010,10 +2010,10 @@ export const Home: React.FC = () => {
       </div>
 
       {/* Reminders List & Motivation */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         
         {/* Today's Reminders Card */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-brand-purpleLight shadow-sm">
+        <div className="lg:col-span-2 bg-white p-4 sm:p-6 rounded-3xl border border-brand-purpleLight shadow-sm">
           {(() => {
             const completedCount = reminders.filter(r => r.status === 'Completed').length;
             const totalCount = reminders.length;

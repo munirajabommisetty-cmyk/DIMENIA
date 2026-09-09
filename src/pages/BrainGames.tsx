@@ -1525,11 +1525,14 @@ export const BrainGames: React.FC = () => {
     }
   };
 
-  const handleSelectGame = (gameId: string) => {
+  const handleSelectGame = (gameId: string | null) => {
     setActiveGame(gameId);
     setSelectedLevel(null);
     setShowInstructions(false);
     setGameStep('idle');
+    if (!gameId) {
+      setGames(storageService.getGames());
+    }
   };
 
   const handleSelectLevel = (level: number) => {
@@ -2353,22 +2356,21 @@ export const BrainGames: React.FC = () => {
                 <span>{gt.moves}: {memoryMoves}</span>
                 <span>{gt.pairsMatched}: {cards.filter(c => c.matched).length / 2} / {cards.length / 2}</span>
               </div>
-              <div className={`grid gap-3 py-2 ${
-                cards.length <= 4 ? 'grid-cols-2' : cards.length <= 8 ? 'grid-cols-4' : 'grid-cols-4'
+              <div className={`grid gap-2 sm:gap-3 py-2 ${
+                cards.length <= 4 ? 'grid-cols-2' : cards.length <= 6 ? 'grid-cols-2 xs:grid-cols-3 sm:grid-cols-3' : 'grid-cols-2 xs:grid-cols-3 sm:grid-cols-4'
               }`}>
                 {cards.map((card, idx) => (
                   <button
                     key={card.id}
                     onClick={() => handleCardClick(idx)}
-                    className={`h-24 sm:h-28 rounded-2xl flex items-center justify-center transition-all duration-300 transform shadow-sm border ${
+                    className={`h-20 xs:h-24 sm:h-28 rounded-2xl flex items-center justify-center transition-all duration-300 transform shadow-sm border ${
                       card.flipped || card.matched
                         ? 'bg-brand-purpleLight border-brand-purple rotate-0'
                         : 'bg-brand-purple border-brand-purple text-white hover:scale-105 active:scale-95'
                     }`}
                   >
                     <span 
-                      className="block leading-none select-none"
-                      style={{ fontSize: 'clamp(4.5rem, 13vw, 6.2rem)' }}
+                      className="block leading-none select-none text-4xl xs:text-5xl sm:text-6xl flex items-center justify-center"
                     >
                       {(card.flipped || card.matched) ? card.symbol : '❓'}
                     </span>

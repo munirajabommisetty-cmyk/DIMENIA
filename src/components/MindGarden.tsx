@@ -491,7 +491,12 @@ export const MindGarden: React.FC = () => {
   useEffect(() => {
     loadGardenData();
     const interval = setInterval(loadGardenData, 2500);
-    return () => clearInterval(interval);
+    const handleStorage = () => loadGardenData();
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   // Overall Progress Percentage
@@ -522,16 +527,19 @@ export const MindGarden: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Side: Floating Script Quote */}
+        {/* Right Side: Floating Script Quote in Emerald Pill Container */}
         <div className="self-stretch sm:self-auto text-right">
-          <span className="text-sm sm:text-base font-bold text-slate-800 italic tracking-wide">
-            {dict.headerQuote}
-          </span>
+          <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200/80 rounded-full px-3 py-1 sm:px-4 sm:py-1.5 shadow-2xs">
+            <span className="text-emerald-700 text-sm sm:text-base">🍃</span>
+            <span className="text-xs sm:text-sm font-bold text-slate-800 italic tracking-wide">
+              {dict.headerQuote}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* 2. MAIN VIRTUAL GARDEN VIEWPORT WITH EXACT REFERENCE ILLUSTRATION & OVERLAY PLAQUES */}
-      <div className="relative w-full aspect-[4/3.2] sm:aspect-[16/10.5] rounded-2xl overflow-hidden border-2 border-amber-800/40 shadow-inner flex items-center justify-center">
+      <div className="relative w-full aspect-[4/3.4] sm:aspect-[16/10.5] rounded-2xl overflow-hidden border-2 border-amber-800/40 shadow-inner flex items-center justify-center select-none">
         
         {/* Exact Illustrated Reference Background Image */}
         <img 
@@ -543,42 +551,65 @@ export const MindGarden: React.FC = () => {
         {/* CENTRAL TREE CLICK AREA */}
         <div 
           onClick={() => setSelectedPlant('tree')}
-          className="absolute top-[18%] left-[28%] right-[28%] bottom-[35%] cursor-pointer z-10 group"
+          className="absolute top-[12%] left-[28%] right-[28%] bottom-[48%] cursor-pointer z-10 group"
           title="Central Heritage Tree"
         />
 
         {/* CENTRAL WOODEN SIGNPOST (DYNAMIC OVERLAY) */}
-        <div className="absolute top-[52%] sm:top-[51%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center">
+        <div className="absolute top-[53%] sm:top-[59%] lg:top-[58%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center pointer-events-auto">
           <div 
             onClick={() => setSelectedPlant('tree')}
-            className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#d97706] border-4 border-[#78350f] rounded-2xl shadow-2xl px-5 py-2.5 sm:px-7 sm:py-3.5 text-center min-w-[170px] sm:min-w-[220px] max-w-xs transition-transform hover:scale-105 cursor-pointer relative"
+            className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#d97706] border-2 sm:border-4 border-[#78350f] rounded-xl sm:rounded-2xl shadow-2xl px-2.5 py-1.5 sm:px-7 sm:py-3.5 text-center min-w-[130px] xs:min-w-[155px] sm:min-w-[220px] max-w-[200px] sm:max-w-xs transition-transform hover:scale-105 cursor-pointer relative"
           >
-            <p className="text-xs sm:text-base font-black text-[#451a03] tracking-wide whitespace-pre-line leading-tight drop-shadow-xs">
+            <p className="text-[10px] xs:text-xs sm:text-base font-black text-[#451a03] tracking-wide whitespace-pre-line leading-tight drop-shadow-xs">
               {signMessage}
             </p>
             {/* Red Heart Accent on bottom-right corner */}
-            <span className="absolute -bottom-1 -right-1 text-sm sm:text-lg leading-none">❤️</span>
+            <span className="absolute -bottom-1 -right-1 text-xs sm:text-lg leading-none">❤️</span>
+          </div>
+        </div>
+
+        {/* LEFT DECORATIVE MOTIVATIONAL WOODEN SIGN (UPPER-LEFT MOUNTAIN/SKY REGION) */}
+        <div className="hidden sm:flex absolute sm:top-[10%] lg:top-[10%] left-[16%] md:left-[18%] lg:left-[20%] -translate-x-1/2 -translate-y-1/2 z-20 flex-col items-center pointer-events-none">
+          <div className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#d97706] border-2 sm:border-3 border-[#78350f] rounded-xl sm:rounded-2xl shadow-xl px-2.5 py-1.5 sm:px-4 sm:py-2 text-center min-w-[130px] sm:min-w-[155px] md:min-w-[170px] max-w-[180px] relative">
+            <p className="text-[10px] sm:text-xs font-black text-[#451a03] tracking-wide leading-tight drop-shadow-xs whitespace-pre-line">
+              {"Small Steps\nMake a Big Difference!"}
+            </p>
+            {/* Green Leaf Accent on bottom center */}
+            <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-xs sm:text-sm leading-none">🍃</span>
+          </div>
+        </div>
+
+        {/* RIGHT DECORATIVE MOTIVATIONAL WOODEN SIGN (UPPER-RIGHT MOUNTAIN/SKY REGION) */}
+        <div className="hidden sm:flex absolute sm:top-[10%] lg:top-[10%] right-[16%] md:right-[18%] lg:right-[20%] translate-x-1/2 -translate-y-1/2 z-20 flex-col items-center pointer-events-none">
+          <div className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#d97706] border-2 sm:border-3 border-[#78350f] rounded-xl sm:rounded-2xl shadow-xl px-2.5 py-1.5 sm:px-4 sm:py-2 text-center min-w-[130px] sm:min-w-[155px] md:min-w-[170px] max-w-[180px] relative">
+            <p className="text-[10px] sm:text-xs font-black text-[#451a03] tracking-wide leading-tight drop-shadow-xs whitespace-pre-line">
+              {"A Brighter\nMind Tomorrow!"}
+            </p>
+            {/* Green Leaf Accent on bottom center */}
+            <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-xs sm:text-sm leading-none">🍃</span>
           </div>
         </div>
 
         {/* FIVE CATEGORY PLANTS & WOODEN STAKE PLAQUES */}
 
-        {/* 1. Top-Left: Memory */}
+        {/* 1. Memory (Top-Left on Mobile, Mid-Left Sunflower Area on Desktop) */}
         <div 
           onClick={() => setSelectedPlant('memory')}
-          className="absolute top-[60%] sm:top-[59%] left-[7.5%] sm:left-[9.5%] -translate-y-1/2 z-20 cursor-pointer group flex flex-col items-center transition-transform hover:scale-105"
+          className="absolute top-[3%] sm:top-[56%] lg:top-[55%] left-[1.5%] sm:left-[4%] lg:left-[6%] sm:-translate-y-1/2 z-20 cursor-pointer group flex flex-col items-center transition-transform hover:scale-105"
         >
-          <div className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#f59e0b] border-2 border-[#78350f] rounded-2xl shadow-xl px-2.5 py-1.5 min-w-[130px] sm:min-w-[165px] flex flex-col items-center gap-1">
-            <div className="flex items-center gap-1 w-full justify-between">
-              <span className="text-[11px] sm:text-xs font-black text-[#451a03] truncate flex items-center gap-1">
-                🌻 {dict.categories.memory}
+          <div className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#f59e0b] border border-[#78350f] sm:border-2 rounded-lg sm:rounded-2xl shadow-md sm:shadow-lg px-1.5 xs:px-2 sm:px-4 py-0.5 sm:py-2 w-[32vw] min-w-[92px] max-w-[145px] sm:w-auto sm:min-w-[180px] md:min-w-[210px] sm:max-w-none flex flex-col items-center gap-0.5 sm:gap-1">
+            <div className="flex items-center justify-between gap-0.5 sm:gap-2 w-full">
+              <span className="text-[8px] xs:text-[9.5px] sm:text-sm font-black text-[#451a03] flex items-center gap-0.5 sm:gap-1.5 min-w-0 truncate">
+                <span className="flex-shrink-0">🧠</span>
+                <span className="truncate">{dict.categories.memory}</span>
               </span>
-              <span className="text-[10px] sm:text-xs font-black text-[#451a03] font-mono">
+              <span className="text-[7.5px] xs:text-[9px] sm:text-sm font-black text-[#451a03] font-mono flex-shrink-0 ml-auto pl-0.5">
                 {memoryScore}%
               </span>
             </div>
             {/* Animated Capsule Progress Bar */}
-            <div className="w-full bg-white/90 rounded-full h-2.5 p-0.5 border border-[#92400e] overflow-hidden flex items-center">
+            <div className="w-full bg-white/90 rounded-full h-1 sm:h-2.5 p-0.5 border border-[#92400e] overflow-hidden flex items-center">
               <div 
                 className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-500" 
                 style={{ width: `${memoryScore}%` }} 
@@ -587,22 +618,23 @@ export const MindGarden: React.FC = () => {
           </div>
         </div>
 
-        {/* 2. Top-Right: Cognitive Games */}
+        {/* 2. Cognitive Games (Top-Right on Mobile, Mid-Right Hibiscus Area on Desktop) */}
         <div 
           onClick={() => setSelectedPlant('cognitive')}
-          className="absolute top-[60%] sm:top-[59%] right-[7.5%] sm:right-[9.5%] -translate-y-1/2 z-20 cursor-pointer group flex flex-col items-center transition-transform hover:scale-105"
+          className="absolute top-[3%] sm:top-[56%] lg:top-[55%] right-[1.5%] sm:right-[4%] lg:right-[6%] sm:-translate-y-1/2 z-20 cursor-pointer group flex flex-col items-center transition-transform hover:scale-105"
         >
-          <div className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#f59e0b] border-2 border-[#78350f] rounded-2xl shadow-xl px-2.5 py-1.5 min-w-[130px] sm:min-w-[165px] flex flex-col items-center gap-1">
-            <div className="flex items-center gap-1 w-full justify-between">
-              <span className="text-[11px] sm:text-xs font-black text-[#451a03] truncate flex items-center gap-1">
-                🌺 {dict.categories.cognitive}
+          <div className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#f59e0b] border border-[#78350f] sm:border-2 rounded-lg sm:rounded-2xl shadow-md sm:shadow-lg px-1.5 xs:px-2 sm:px-4 py-0.5 sm:py-2 w-[34vw] min-w-[98px] max-w-[155px] sm:w-auto sm:min-w-[185px] md:min-w-[215px] sm:max-w-none flex flex-col items-center gap-0.5 sm:gap-1">
+            <div className="flex items-center justify-between gap-0.5 sm:gap-2 w-full">
+              <span className="text-[8px] xs:text-[9.5px] sm:text-sm font-black text-[#451a03] flex items-center gap-0.5 sm:gap-1.5 min-w-0 leading-tight">
+                <span className="flex-shrink-0">🎮</span>
+                <span className="truncate sm:whitespace-normal">{dict.categories.cognitive}</span>
               </span>
-              <span className="text-[10px] sm:text-xs font-black text-[#451a03] font-mono">
+              <span className="text-[7.5px] xs:text-[9px] sm:text-sm font-black text-[#451a03] font-mono flex-shrink-0 ml-auto pl-0.5">
                 {cognitiveScore}%
               </span>
             </div>
             {/* Animated Capsule Progress Bar */}
-            <div className="w-full bg-white/90 rounded-full h-2.5 p-0.5 border border-[#92400e] overflow-hidden flex items-center">
+            <div className="w-full bg-white/90 rounded-full h-1 sm:h-2.5 p-0.5 border border-[#92400e] overflow-hidden flex items-center">
               <div 
                 className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-500" 
                 style={{ width: `${cognitiveScore}%` }} 
@@ -611,22 +643,23 @@ export const MindGarden: React.FC = () => {
           </div>
         </div>
 
-        {/* 3. Bottom-Left: Daily Activities */}
+        {/* 3. Daily Activities (Middle-Low on Mobile, Bottom-Left on Desktop) */}
         <div 
           onClick={() => setSelectedPlant('activities')}
-          className="absolute bottom-[8.5%] sm:bottom-[9.5%] left-[6.5%] sm:left-[8.5%] z-20 cursor-pointer group flex flex-col items-center transition-transform hover:scale-105"
+          className="absolute top-[71%] sm:top-auto sm:bottom-[6%] left-1/2 -translate-x-1/2 sm:left-[4%] lg:left-[6%] sm:translate-x-0 z-20 cursor-pointer group flex flex-col items-center transition-transform hover:scale-105"
         >
-          <div className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#f59e0b] border-2 border-[#78350f] rounded-2xl shadow-xl px-2.5 py-1.5 min-w-[130px] sm:min-w-[165px] flex flex-col items-center gap-1">
-            <div className="flex items-center gap-1 w-full justify-between">
-              <span className="text-[11px] sm:text-xs font-black text-[#451a03] truncate flex items-center gap-1">
-                🌸 {dict.categories.activities}
+          <div className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#f59e0b] border border-[#78350f] sm:border-2 rounded-lg sm:rounded-2xl shadow-md sm:shadow-lg px-1.5 xs:px-2 sm:px-4 py-0.5 sm:py-2 w-[56vw] min-w-[135px] max-w-[210px] sm:w-auto sm:min-w-[185px] md:min-w-[215px] sm:max-w-none flex flex-col items-center gap-0.5 sm:gap-1">
+            <div className="flex items-center justify-between gap-0.5 sm:gap-2 w-full">
+              <span className="text-[8.5px] xs:text-[10px] sm:text-sm font-black text-[#451a03] flex items-center gap-0.5 sm:gap-1.5 min-w-0 leading-tight">
+                <span className="flex-shrink-0">☀️</span>
+                <span className="truncate sm:whitespace-normal">{dict.categories.activities}</span>
               </span>
-              <span className="text-[10px] sm:text-xs font-black text-[#451a03] font-mono">
+              <span className="text-[7.5px] xs:text-[9px] sm:text-sm font-black text-[#451a03] font-mono flex-shrink-0 ml-auto pl-0.5">
                 {activitiesScore}%
               </span>
             </div>
             {/* Animated Capsule Progress Bar */}
-            <div className="w-full bg-white/90 rounded-full h-2.5 p-0.5 border border-[#92400e] overflow-hidden flex items-center">
+            <div className="w-full bg-white/90 rounded-full h-1 sm:h-2.5 p-0.5 border border-[#92400e] overflow-hidden flex items-center">
               <div 
                 className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-500" 
                 style={{ width: `${activitiesScore}%` }} 
@@ -635,22 +668,23 @@ export const MindGarden: React.FC = () => {
           </div>
         </div>
 
-        {/* 4. Bottom-Center: Mood */}
+        {/* 4. Mood (Bottom-Left on Mobile, Bottom-Center on Desktop) */}
         <div 
           onClick={() => setSelectedPlant('mood')}
-          className="absolute bottom-[5.5%] sm:bottom-[6.5%] left-1/2 -translate-x-1/2 z-20 cursor-pointer group flex flex-col items-center transition-transform hover:scale-105"
+          className="absolute bottom-[2%] sm:bottom-[4%] left-[1.5%] sm:left-1/2 sm:-translate-x-1/2 z-20 cursor-pointer group flex flex-col items-center transition-transform hover:scale-105"
         >
-          <div className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#f59e0b] border-2 border-[#78350f] rounded-2xl shadow-xl px-2.5 py-1.5 min-w-[130px] sm:min-w-[165px] flex flex-col items-center gap-1">
-            <div className="flex items-center gap-1 w-full justify-between">
-              <span className="text-[11px] sm:text-xs font-black text-[#451a03] truncate flex items-center gap-1">
-                🌼 {dict.categories.mood}
+          <div className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#f59e0b] border border-[#78350f] sm:border-2 rounded-lg sm:rounded-2xl shadow-md sm:shadow-lg px-1.5 xs:px-2 sm:px-4 py-0.5 sm:py-2 w-[36vw] min-w-[92px] max-w-[145px] sm:w-auto sm:min-w-[165px] md:min-w-[195px] sm:max-w-none flex flex-col items-center gap-0.5 sm:gap-1">
+            <div className="flex items-center justify-between gap-0.5 sm:gap-2 w-full">
+              <span className="text-[8px] xs:text-[9.5px] sm:text-sm font-black text-[#451a03] flex items-center gap-0.5 sm:gap-1.5 min-w-0 truncate">
+                <span className="flex-shrink-0">😊</span>
+                <span className="truncate">{dict.categories.mood}</span>
               </span>
-              <span className="text-[10px] sm:text-xs font-black text-[#451a03] font-mono">
+              <span className="text-[7.5px] xs:text-[9px] sm:text-sm font-black text-[#451a03] font-mono flex-shrink-0 ml-auto pl-0.5">
                 {moodScore}%
               </span>
             </div>
             {/* Animated Capsule Progress Bar */}
-            <div className="w-full bg-white/90 rounded-full h-2.5 p-0.5 border border-[#92400e] overflow-hidden flex items-center">
+            <div className="w-full bg-white/90 rounded-full h-1 sm:h-2.5 p-0.5 border border-[#92400e] overflow-hidden flex items-center">
               <div 
                 className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-500" 
                 style={{ width: `${moodScore}%` }} 
@@ -659,22 +693,23 @@ export const MindGarden: React.FC = () => {
           </div>
         </div>
 
-        {/* 5. Bottom-Right: Medication */}
+        {/* 5. Medication (Bottom-Right on Mobile & Desktop) */}
         <div 
           onClick={() => setSelectedPlant('health')}
-          className="absolute bottom-[8.5%] sm:bottom-[9.5%] right-[6.5%] sm:right-[8.5%] z-20 cursor-pointer group flex flex-col items-center transition-transform hover:scale-105"
+          className="absolute bottom-[2%] sm:bottom-[6%] right-[1.5%] sm:right-[4%] lg:right-[6%] sm:top-auto sm:translate-y-0 z-20 cursor-pointer group flex flex-col items-center transition-transform hover:scale-105"
         >
-          <div className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#f59e0b] border-2 border-[#78350f] rounded-2xl shadow-xl px-2.5 py-1.5 min-w-[130px] sm:min-w-[165px] flex flex-col items-center gap-1">
-            <div className="flex items-center gap-1 w-full justify-between">
-              <span className="text-[11px] sm:text-xs font-black text-[#451a03] truncate flex items-center gap-1">
-                🪻 {dict.categories.health}
+          <div className="bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#f59e0b] border border-[#78350f] sm:border-2 rounded-lg sm:rounded-2xl shadow-md sm:shadow-lg px-1.5 xs:px-2 sm:px-4 py-0.5 sm:py-2 w-[36vw] min-w-[92px] max-w-[145px] sm:w-auto sm:min-w-[180px] md:min-w-[210px] sm:max-w-none flex flex-col items-center gap-0.5 sm:gap-1">
+            <div className="flex items-center justify-between gap-0.5 sm:gap-2 w-full">
+              <span className="text-[8px] xs:text-[9.5px] sm:text-sm font-black text-[#451a03] flex items-center gap-0.5 sm:gap-1.5 min-w-0 truncate">
+                <span className="flex-shrink-0">💊</span>
+                <span className="truncate">{dict.categories.health}</span>
               </span>
-              <span className="text-[10px] sm:text-xs font-black text-[#451a03] font-mono">
+              <span className="text-[7.5px] xs:text-[9px] sm:text-sm font-black text-[#451a03] font-mono flex-shrink-0 ml-auto pl-0.5">
                 {healthScore}%
               </span>
             </div>
             {/* Animated Capsule Progress Bar */}
-            <div className="w-full bg-white/90 rounded-full h-2.5 p-0.5 border border-[#92400e] overflow-hidden flex items-center">
+            <div className="w-full bg-white/90 rounded-full h-1 sm:h-2.5 p-0.5 border border-[#92400e] overflow-hidden flex items-center">
               <div 
                 className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-500" 
                 style={{ width: `${healthScore}%` }} 

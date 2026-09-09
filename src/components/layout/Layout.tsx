@@ -254,29 +254,29 @@ export const Layout: React.FC<LayoutProps> = ({ children, textSize, highContrast
   return (
     <div className={`h-screen overflow-hidden flex flex-col lg:flex-row ${isCaregiver ? 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900' : 'bg-brand-lavender'} ${getScaleClass()} ${highContrast ? 'high-contrast-mode' : ''} transition-all duration-700`}>
       {/* Mobile/Tablet Top Header */}
-      <header className={`lg:hidden flex items-center justify-between px-6 py-4 border-b sticky top-0 z-40 ${
+      <header className={`lg:hidden flex items-center justify-between px-3.5 sm:px-6 py-3 sm:py-4 border-b sticky top-0 z-40 ${
         isCaregiver 
-          ? 'bg-slate-900 border-slate-800 text-white' 
-          : 'bg-white border-brand-purple/15 text-brand-navy'
+          ? 'bg-slate-900/95 backdrop-blur-md border-slate-800 text-white' 
+          : 'bg-white/95 backdrop-blur-md border-brand-purple/15 text-brand-navy'
       }`}>
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate(isCaregiver ? '/caregiver' : '/')}>
-          <SVGBrain className={`w-8 h-8 ${isCaregiver ? 'text-cyan-400' : 'text-brand-purple'}`} />
-          <h1 className="font-bold text-lg">{t('brand.title') || 'Second Brain'}</h1>
+          <SVGBrain className={`w-7 h-7 sm:w-8 sm:h-8 ${isCaregiver ? 'text-cyan-400' : 'text-brand-purple'}`} />
+          <h1 className="font-bold text-base sm:text-lg truncate">{t('brand.title') || 'Second Brain'}</h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3">
           <button 
             onClick={() => navigate('/settings')} 
-            className={`p-2 transition-colors ${isCaregiver ? 'text-slate-300 hover:text-white' : 'text-brand-grayText hover:text-brand-purple'}`}
+            className={`p-2 transition-colors rounded-xl ${isCaregiver ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-brand-grayText hover:text-brand-purple hover:bg-stone-100'}`}
             aria-label="Settings"
           >
-            <SettingsIcon className="w-6 h-6" />
+            <SettingsIcon className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className={`p-2 focus:outline-none ${isCaregiver ? 'text-white' : 'text-brand-navy'}`}
+            className={`p-2 rounded-xl focus:outline-none ${isCaregiver ? 'text-white hover:bg-slate-800' : 'text-brand-navy hover:bg-stone-100'}`}
             aria-label="Toggle menu"
           >
-            {mobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
+            {mobileMenuOpen ? <X className="w-6 h-6 sm:w-7 sm:h-7" /> : <Menu className="w-6 h-6 sm:w-7 sm:h-7" />}
           </button>
         </div>
       </header>
@@ -299,8 +299,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, textSize, highContrast
       {/* Mobile/Tablet Menu Drawer Overlay */}
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex animate-fade-in">
-          <div className="fixed inset-0 bg-brand-navy bg-opacity-40" onClick={() => setMobileMenuOpen(false)} />
-          <div className="relative w-80 max-w-[85vw] h-full">
+          <div className="fixed inset-0 bg-brand-navy/60 backdrop-blur-xs" onClick={() => setMobileMenuOpen(false)} />
+          <div className="relative w-80 max-w-[85vw] h-full shadow-2xl">
             <SidebarContent />
           </div>
         </div>
@@ -335,11 +335,50 @@ export const Layout: React.FC<LayoutProps> = ({ children, textSize, highContrast
             )}
           </div>
         )}
-        <div className={`flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto pb-24 relative z-10 ${!sidebarExpanded ? 'lg:pl-20' : ''}`}>
+        <div className={`flex-1 p-3.5 sm:p-6 md:p-8 max-w-7xl w-full mx-auto pb-28 lg:pb-24 relative z-10 ${!sidebarExpanded ? 'lg:pl-20' : ''}`}>
           {children}
         </div>
       </main>
-    </div>
 
+      {/* Mobile Bottom Navigation Bar for quick touch navigation on phones */}
+      <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-30 border-t backdrop-blur-md px-1.5 py-1 flex items-center justify-around shadow-lg ${
+        isCaregiver 
+          ? 'bg-slate-900/95 border-slate-800 text-slate-300' 
+          : 'bg-white/95 border-stone-200/80 text-brand-navy'
+      }`}>
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isTalkToMe = item.to === '/talk-to-me';
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={() => setMobileMenuOpen(false)}
+              className={({ isActive }) => `
+                flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all text-center min-w-[50px]
+                ${isTalkToMe 
+                  ? (isActive 
+                      ? 'text-amber-600 scale-105 font-black' 
+                      : 'text-amber-700 hover:text-amber-800') 
+                  : (isActive 
+                      ? (isCaregiver ? 'text-cyan-400 font-black' : 'text-brand-purple font-black') 
+                      : (isCaregiver ? 'text-slate-400 hover:text-white' : 'text-stone-500 hover:text-brand-navy'))}
+              `}
+            >
+              {isTalkToMe ? (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-xs">
+                  <Mic className="w-4 h-4 stroke-[2.5]" />
+                </div>
+              ) : (
+                <Icon className="w-5 h-5 stroke-[2.2]" />
+              )}
+              <span className="text-[10px] font-bold mt-0.5 max-w-[64px] truncate leading-tight">
+                {item.label}
+              </span>
+            </NavLink>
+          );
+        })}
+      </nav>
+    </div>
   );
 };

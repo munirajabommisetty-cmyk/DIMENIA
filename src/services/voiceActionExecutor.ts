@@ -612,15 +612,23 @@ export const voiceActionExecutor = {
         intent === 'MEMORY_QUERY'
       );
 
+      if (intent === 'CAREGIVER_ACCESS_RESTRICTED') {
+        callbacks.triggerToast(
+          language === 'Hindi' ? 'केयरगिवर एक्सेस सीमित' : language === 'Bengali' ? 'কেয়ারগিভার অ্যাক্সেস সীমিত' : 'Caregiver Access Restricted'
+        );
+        return { nextContext: null };
+      }
+
       if (
-        intent === 'NAVIGATION' || 
+        (intent === 'NAVIGATION' || 
         intent.startsWith('OPEN_') || 
         intent === 'PLAY_GAME' ||
         isTaskStatusIntent ||
         isReminderQueryIntent ||
         isGamesQueryIntent ||
         isMemoriesQueryIntent ||
-        !!parsed.path
+        !!parsed.path) &&
+        parsed.path !== undefined
       ) {
         let targetPath = parsed.path || parameters.target || (parsed.parameters && parsed.parameters.target);
         if (!targetPath || targetPath.trim() === '') {
@@ -654,6 +662,10 @@ export const voiceActionExecutor = {
             settings: '/settings',
             setting: '/settings',
             '/settings': '/settings',
+            garden: '/garden',
+            'mind garden': '/garden',
+            bagaan: '/garden',
+            '/garden': '/garden',
             caregiver_dashboard: '/caregiver',
             'caregiver dashboard': '/caregiver',
             caregiver: '/caregiver',
@@ -672,6 +684,13 @@ export const voiceActionExecutor = {
             finalRoute = canonicalMap[cleanTarget];
           } else if (canonicalMap[targetPath.toLowerCase().trim()]) {
             finalRoute = canonicalMap[targetPath.toLowerCase().trim()];
+          }
+
+          if (finalRoute === '/caregiver' && activeUser?.role !== 'Caregiver') {
+            callbacks.triggerToast(
+              language === 'Hindi' ? 'केयरगिवर एक्सेस सीमित' : language === 'Bengali' ? 'কেয়ারগিভার অ্যাক্সেস সীমিত' : 'Caregiver Access Restricted'
+            );
+            return { nextContext: null };
           }
 
           console.log(`[VOICE] intent: ${intent}`);

@@ -133,17 +133,86 @@ export class VoiceRecognitionService {
     this.peakLevel = 0;
     callbacks.onStart();
 
-    // Check backend health
+    // Check backend health for local Whisper CLI execution
     const isConnected = await apiClient.checkHealth();
-    if (!isConnected) {
-      console.warn('[VOICE] Local backend unavailable.');
+    if (isConnected) {
+      await this.startFallbackRecording();
+    } else {
+      // If local backend server is not running, fall back seamlessly to browser offline speech recognition
+      const hasWebSpeech = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+      if (hasWebSpeech) {
+        console.log('[VOICE] Local backend server unreachable. Using in-browser speech recognition fallback.');
+        this.startWebSpeechRecognition(lang, callbacks);
+      } else {
+        console.warn('[VOICE] Local backend and in-browser speech recognition unavailable.');
+        this.isListening = false;
+        callbacks.onError('service-unavailable');
+        callbacks.onEnd();
+      }
+    }
+  }
+
+  private recognitionInstance: any = null;
+
+  private startWebSpeechRecognition(lang: LanguageKey, callbacks: VoiceStreamCallbacks) {
+    const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRec) {
       this.isListening = false;
       callbacks.onError('service-unavailable');
       callbacks.onEnd();
       return;
     }
 
-    await this.startFallbackRecording();
+    try {
+      this.recognitionInstance = new SpeechRec();
+      this.recognitionInstance.continuous = false;
+      this.recognitionInstance.interimResults = true;
+      this.recognitionInstance.lang = localeMap[lang] || 'en-IN';
+
+      let finalTranscript = '';
+
+      this.recognitionInstance.onstart = () => {
+        console.log('[VOICE WebSpeech] Recognition started');
+      };
+
+      this.recognitionInstance.onresult = (event: any) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+        if (interim && callbacks.onPartial) {
+          callbacks.onPartial(interim);
+        }
+      };
+
+      this.recognitionInstance.onerror = (event: any) => {
+        console.error('[VOICE WebSpeech] Error:', event.error);
+        this.isListening = false;
+        callbacks.onError(event.error === 'not-allowed' ? 'microphone-denied' : 'service-unavailable');
+        callbacks.onEnd();
+      };
+
+      this.recognitionInstance.onend = () => {
+        this.isListening = false;
+        if (finalTranscript && finalTranscript.trim().length > 0) {
+          callbacks.onResult(finalTranscript.trim());
+        } else {
+          callbacks.onError('empty-recording');
+        }
+        callbacks.onEnd();
+      };
+
+      this.recognitionInstance.start();
+    } catch (e: any) {
+      console.error('[VOICE WebSpeech] Failed to start WebSpeech:', e);
+      this.isListening = false;
+      callbacks.onError('service-unavailable');
+      callbacks.onEnd();
+    }
   }
 
   private async startFallbackRecording() {
@@ -219,6 +288,11 @@ export class VoiceRecognitionService {
   async stopListening() {
     if (!this.isListening) return;
     this.isListening = false;
+
+    if (this.recognitionInstance) {
+      try { this.recognitionInstance.stop(); } catch (e) {}
+      this.recognitionInstance = null;
+    }
 
     if (this.recordTimeout) {
       clearTimeout(this.recordTimeout);

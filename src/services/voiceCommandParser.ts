@@ -20,7 +20,151 @@ export function patientAIQueryResolver(
   const getLangStr = (dict: Record<string, string>): string => dict[lang] || dict.English;
 
   // =========================================================================
-  // 0. EXPLICIT REMINDER CREATION CHECK FIRST!
+  // 0. CAREGIVER ACCESS RESTRICTION FOR PATIENTS
+  // =========================================================================
+  if (matchesAny(['caregiver dashboard', 'caregiver panel', 'caregiver', 'केयरगिवर', 'কেয়ারগিভার'])) {
+    if (profile.role !== 'Caregiver') {
+      return {
+        intent: 'CAREGIVER_ACCESS_RESTRICTED',
+        path: undefined,
+        response: getLangStr({
+          English: 'Sorry, the Caregiver Dashboard is restricted to authorized caregivers.',
+          Hindi: 'क्षमा करें, केयरगिवर डैशबोर्ड केवल अधिकृत केयरगिवर के लिए है।',
+          Bengali: 'দুঃখিত, কেয়ারগিভার ড্যাশবোর্ড কেবল অনুমোদিত কেয়ারগিভারদের জন্য।',
+          Assamese: 'দুঃখিত, কেয়াৰগিভাৰ ড্যাশবোর্ড কেৱল কৰ্তৃত্বপ্ৰাপ্ত কেয়াৰগিভাৰসকলৰ বাবে।',
+          Manipuri: 'ঙাকপীইউ, কেয়ারগিভার ড্যাশবোর্ড অসি অয়াবা পীরবা কেয়ারগিভারশিংগীনি।',
+          Khasi: 'Sngewbha map, ka Caregiver Dashboard ka dei tang ia ki caregiver ba la shah ban lehkai.',
+          Mizo: 'Mawhphurhtu Caregiver chauh ta tur a ni e.',
+          Nagamese: 'Caregiver Dashboard toh authorized caregiver khan laga karney matro ase.',
+          Tripuri: 'Caregiver Dashboard toh authorized caregiver bai samung khai manu.'
+        })
+      };
+    } else {
+      return {
+        intent: 'OPEN_CAREGIVER',
+        path: '/caregiver',
+        response: getLangStr({
+          English: 'Opening caregiver dashboard.',
+          Hindi: 'केयरगिवर डैशबोर्ड खोला जा रहा है।',
+          Bengali: 'কেয়ারগিভার ড্যাশবোর্ড খোলা হচ্ছে।'
+        })
+      };
+    }
+  }
+
+  // =========================================================================
+  // 0.1 MEDICAL ADVICE & DIAGNOSIS REFUSAL
+  // =========================================================================
+  if (matchesAny(['diagnose', 'what medicine should i take for', 'cure for', 'how to treat', 'medical advice', 'doctor advice', 'prescription for', 'dawa konsi lu'])) {
+    return {
+      intent: 'MEDICAL_ADVICE_REFUSAL',
+      response: getLangStr({
+        English: "I don't have that specific health condition or medical detail recorded in your profile yet. For medical advice, diagnosis, or prescriptions, please consult your doctor or caregiver.",
+        Hindi: "चिकित्सा सलाह, निदान या नुस्खों के लिए, कृपया अपने डॉक्टर या देखभालकर्ता से परामर्श लें।",
+        Bengali: "চিকিৎসা পরামর্শ, রোগ নির্ণয় বা ব্যবস্থাপত্রের জন্য, অনুগ্রহ করে আপনার ডাক্তার বা কেয়ারগিভারের সাথে পরামর্শ করুন।",
+        Assamese: "চিকিৎসা পৰামৰ্শৰ বাবে অনুগ্ৰহ কৰি আপোনাৰ চিকিৎসকৰ সৈতে কথা পাতক।",
+        Manipuri: "হকশেলগী পাঅতাক অমসুং হিদাক-লাংথাকগীদমক নহাক্কী ডাক্তারগা তান্নবীউ।",
+        Khasi: "Ia ki jingkylli kiba iadei bad ka koit ka khiah, sngewbha ialok bad u doktor jong phi.",
+        Mizo: "Damdawi leh enkawlna chungchangah chuan doctor rawn ang che.",
+        Nagamese: "Medical advice nimite doctor nahoile caregiver ke phutibi.",
+        Tripuri: "Medical advice bai doctor ya caregiver ni lok-te khamdi."
+      })
+    };
+  }
+
+  // =========================================================================
+  // 0.2 USER HEALTH & MEDICAL PROFILE QUERIES
+  // =========================================================================
+  if (matchesAny(['my health', 'health condition', 'medical condition', 'health status', 'medical details', 'swasthya', 'स्वास्थ्य', 'আমার স্বাস্থ্য', 'health profile', 'my medical record', 'doctor notes', 'my condition'])) {
+    const healthCond = profile.healthCondition || profile.medicalCondition || profile.condition || profile.medicalNotes || '';
+    const bloodGroup = profile.bloodGroup || '';
+    const emergencyContact = profile.emergencyContact || profile.caregiverPhone || profile.caregiverName || '';
+
+    let healthMsg: Record<string, string>;
+    if (healthCond || bloodGroup) {
+      const details = [
+        healthCond ? `Condition: ${healthCond}` : '',
+        bloodGroup ? `Blood Group: ${bloodGroup}` : '',
+        emergencyContact ? `Caregiver/Emergency Contact: ${emergencyContact}` : ''
+      ].filter(Boolean).join('. ');
+
+      healthMsg = {
+        English: `Here are the health details recorded in your profile: ${details}. Please consult your healthcare provider or caregiver for medical advice.`,
+        Hindi: `आपकी प्रोफ़ाइल में दर्ज स्वास्थ्य विवरण यहाँ दिए गए हैं: ${details}। चिकित्सा सलाह के लिए कृपया अपने डॉक्टर या देखभालकर्ता से परामर्श लें।`,
+        Bengali: `আপনার প্রোফাইলে নথিভুক্ত স্বাস্থ্যের বিবরণ: ${details}। অভিজ্ঞ পরামর্শের জন্য আপনার ডাক্তারের সাথে যোগাযোগ করুন।`,
+        Assamese: `আপোনাৰ ফাইলত সংৰক্ষিত স্বাস্থ্যৰ তথ্য: ${details}।`,
+        Manipuri: `নহাক্কী প্রফাইলদা লৈরিবা হকশেলগী ঈ-পাঅ: ${details}।`,
+        Khasi: `Ki jingtip thiang babha jong phi: ${details}.`,
+        Mizo: `I hriselna chungchang chhinchhiah te: ${details}.`,
+        Nagamese: `Apuni laga profile te recorded health details: ${details}.`,
+        Tripuri: `Nini profile te recorded health details: ${details}.`
+      };
+    } else {
+      healthMsg = {
+        English: "I don't have that specific health condition or medical detail recorded in your profile yet.",
+        Hindi: "मेरे पास आपकी प्रोफ़ाइल में दर्ज वह विशिष्ट स्वास्थ्य स्थिति या चिकित्सा विवरण अभी तक नहीं है।",
+        Bengali: "আমার কাছে আপনার প্রোফাইলে সংগৃহীত নির্দিষ্ট কোনো স্বাস্থ্য অবস্থা বা চিকিৎসার বিবরণ এখনও নেই।",
+        Assamese: "মোৰ ওচৰত আপোনাৰ বিশেষ স্বাস্থ্য সম্পৰ্কীয় কোনো সংৰক্ষিত তথ্য নাই।",
+        Manipuri: "ঐগী অমুক্তা নহাক্কী অখন্নবা হকশেলগী ঈ-পাঅ ইদুনা লৈতাদ্রে।",
+        Khasi: "Nga khlem don iakiba bniah shaphang ka koit ka khiah jong phi ha ka profile.",
+        Mizo: "I profile-ah hian hriselna bik a la chhinchhiah lo a ni.",
+        Nagamese: "Apuni laga profile te specific health condition recorded nai.",
+        Tripuri: "Nini profile te specific health condition record tongya."
+      };
+    }
+
+    return {
+      intent: 'HEALTH_QUERY',
+      path: '/settings',
+      response: getLangStr(healthMsg)
+    };
+  }
+
+  // =========================================================================
+  // 0.3 MIND GARDEN & WELLNESS GARDEN QUERIES
+  // =========================================================================
+  if (matchesAny(['mind garden', 'garden', 'my garden', 'garden progress', 'how is my garden', 'garden status', 'explain garden', 'about garden', 'bagaan', 'बागान', 'बागीचा', 'বাগান', 'garden details', 'tell me about my garden'])) {
+    const completedTasksCount = schedule.filter((s: any) => s.completed).length;
+    const memoriesCount = memories.length;
+    const gamesCount = games.length;
+    const totalProgress = completedTasksCount + memoriesCount + gamesCount;
+
+    let gardenMsg: Record<string, string>;
+    if (totalProgress > 0) {
+      gardenMsg = {
+        English: `Your Mind Garden represents your daily progress and cognitive wellness. Right now, your garden is blooming with ${completedTasksCount} completed task${completedTasksCount !== 1 ? 's' : ''}, ${memoriesCount} saved photo memor${memoriesCount !== 1 ? 'ies' : 'y'}, and ${gamesCount} brain game activity. Keep nurturing your garden!`,
+        Hindi: `आपका माइंड गार्डन आपकी दैनिक प्रगति और मानसिक कल्याण का प्रतीक है। अभी आपके बगीचे में ${completedTasksCount} पूरे किए गए कार्य, ${memoriesCount} सहेजी गई यादें और ${gamesCount} गेम गतिविधियाँ खिल रही हैं।`,
+        Bengali: `আপনার মাইন্ড গার্ডেন আপনার দৈনন্দিন অগ্রগতি এবং মানসিক স্বাস্থ্যের প্রতীক। বর্তমানে আপনার বাগানে ${completedTasksCount}টি সম্পন্ন কাজ, ${memoriesCount}টি সংরক্ষিত স্মৃতি এবং ${gamesCount}টি গেম প্রকাশিত রয়েছে।`,
+        Assamese: `আপোনাৰ মাইন্ড গার্ডেনে আপোনাৰ দৈনিক অগ্ৰগতি প্ৰকাশ কৰে। এতিয়ালৈকে ${completedTasksCount}টা সম্পূৰ্ণ কাম আৰু ${memoriesCount}টা স্মৃতি সংৰক্ষিত আছে।`,
+        Manipuri: `নহাক্কী মাইন্ড গার্ডেন অসি নহাক্কী চাউখৎপগী সাক্লোননি। ${completedTasksCount} থবক লোইশিনখ্রে অমসুং ${memoriesCount} মেমোরী লৈরি।`,
+        Khasi: `Ka Mind Garden jong phi ka pyni ia ka jingiaid shaphrang jong phi. Don ${completedTasksCount} ki kam ba la dep bad ${memoriesCount} ki jingkynmaw.`,
+        Mizo: `I Mind Garden hian i hmasawnna a pui e. Vawiin hian hmasawnna tha tak i nei e.`,
+        Nagamese: `Apuni laga Mind Garden aji ${completedTasksCount} complete activity aru ${memoriesCount} memories lagote bhal pora gro hoikena ase.`,
+        Tripuri: `Nini Mind Garden te aji ${completedTasksCount} complete activity te ${memoriesCount} memories tongkha.`
+      };
+    } else {
+      gardenMsg = {
+        English: "Your Mind Garden represents your daily progress and cognitive wellness. Currently, your garden is waiting to grow! Complete your daily schedule tasks, play brain games, and add photo memories to make your garden blossom.",
+        Hindi: "आपका माइंड गार्डन आपकी दैनिक प्रगति का प्रतीक है। अभी आपका बगीचा बढ़ने का इंतज़ार कर रहा है! अपने दैनिक कार्य पूरे करें, गेम खेलें और फोटो यादें जोड़ें।",
+        Bengali: "আপনার মাইন্ড গার্ডেন আপনার দৈনন্দিন অগ্রগতির প্রতীক। বর্তমানে আপনার বাগান বেড়ে ওঠার অপেক্ষায় আছে! আপনার কাজ সম্পন্ন করুন, ব্রেন গেম খেলুন এবং স্মৃতি যুক্ত করুন।",
+        Assamese: "আপোনাৰ মাইন্ড গার্ডেন আপোনাৰ অগ্ৰগতিৰ প্রতীক। কাম সম্পূৰ্ণ কৰক আৰু গেম খেলক!",
+        Manipuri: "নহাক্কী মাইন্ড গার্ডেন অসি হージュিক চাওখৎনবগী তাঞ্জা অমা লৈরি।",
+        Khasi: "Ka Mind Garden jong phi ka iaingai ban san! Pyndep ia ki kam ba la buh.",
+        Mizo: "I Mind Garden hi puitlin tura buatsaih mek a ni e.",
+        Nagamese: "Apuni laga Mind Garden gro kuribole aji tasks aru games complete kuribi.",
+        Tripuri: "Nini Mind Garden aji tabok tasks bai games khamdi."
+      };
+    }
+
+    return {
+      intent: 'OPEN_MIND_GARDEN',
+      path: '/garden',
+      response: getLangStr(gardenMsg)
+    };
+  }
+
+  // =========================================================================
+  // 0.4 EXPLICIT REMINDER CREATION CHECK FIRST!
   // =========================================================================
   const isExplicitReminderCreate = matchesAny([
     'remind me to', 'remind me at', 'add a reminder', 'add reminder',
@@ -610,7 +754,7 @@ function parseDeterministicCommand(
   const scheduleKeys = ['activities', 'activity', 'schedule', 'my day', 'dincharya', 'din charya', 'aaj ka plan', 'রুটিন', 'সময়সূচী', 'আজ কি বার', 'কয়টা বাজে', 'दिनचर्या', 'शेड्यूल', 'गतिविधि', 'काम', 'kya karna hai', 'aaj ke kaam', 'aaj ka task'];
   const gamesKeys = ['brain games', 'brain game', 'games', 'game', 'khel', 'গেম', 'গ্যাম', 'गेम', 'खेल', 'गेम्स', 'ब्रेन गेम', 'ब्रेन गेम्स', 'খেলা'];
   const settingsKeys = ['settings', 'setting', 'profile', 'account', 'सेटिंग', 'प्रोफाइल', 'सेटिंग्स', 'अकाउंट', 'সেটিংস', 'প্রোফাইল'];
-  const caregiverKeys = ['caregiver', 'dashboard', 'panel', 'anu', 'केयरगिवर', 'केयरगिवर डैशबोर्ड', 'কেয়ারগিভার', 'অনু'];
+  const caregiverKeys = ['caregiver dashboard', 'caregiver panel', 'caregiver', 'केयरगिवर डैशबोर्ड', 'केयरगिवर', 'কেয়ারগিভার ড্যাশবোর্ড', 'কেয়ারগিভার', 'anu dashboard'];
   const homeKeys = ['home', 'होम', 'घर'];
   const helpKeys = ['help', 'emergency', 'sos', 'मदद', 'सहायता', 'সাহায্য'];
   const backKeys = ['back', 'pichej', 'piche', 'peeche', 'phire', 'back jao'];
@@ -1040,13 +1184,24 @@ export interface ParsedCommand {
   };
 }
 
+const format12HourDisplay = (timeStr: string): string => {
+  if (!timeStr) return '';
+  const [hoursStr, minutesStr] = timeStr.split(':');
+  const hours = parseInt(hoursStr, 10);
+  const suffix = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  return `${displayHours}:${minutesStr} ${suffix}`;
+};
+
 export const parseCommandTime = (text: string): string | null => {
-  const clean = text.toLowerCase();
-  const match = clean.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm|बजे|pm\b|am\b)?/i);
-  if (match) {
-    let hours = parseInt(match[1], 10);
-    const minutes = match[2] ? parseInt(match[2], 10) : 0;
-    const ampm = match[3] ? match[3].toLowerCase() : null;
+  const clean = text.toLowerCase().trim();
+
+  // Pattern 1: HH:MM AM/PM or HH:MM (e.g., "8:30 PM", "08:30 PM", "7:15 AM", "20:30", "8:30")
+  const match1 = clean.match(/\b(\d{1,2}):(\d{2})\s*(am|pm|बजे|pm\b|am\b)?\b/i);
+  if (match1) {
+    let hours = parseInt(match1[1], 10);
+    const minutes = parseInt(match1[2], 10);
+    const ampm = match1[3] ? match1[3].toLowerCase() : null;
 
     if (ampm === 'pm' && hours < 12) hours += 12;
     if (ampm === 'am' && hours === 12) hours = 0;
@@ -1064,23 +1219,127 @@ export const parseCommandTime = (text: string): string | null => {
       return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     }
   }
+
+  // Pattern 1b: HHMM AM/PM without colon (e.g. "830 PM", "0830 PM", "715 AM")
+  const match1b = clean.match(/\b(\d{1,2})(\d{2})\s*(am|pm|बजे|pm\b|am\b)\b/i);
+  if (match1b) {
+    let hours = parseInt(match1b[1], 10);
+    const minutes = parseInt(match1b[2], 10);
+    const ampm = match1b[3].toLowerCase();
+
+    if (ampm === 'pm' && hours < 12) hours += 12;
+    if (ampm === 'am' && hours === 12) hours = 0;
+
+    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+  }
+
+  // Pattern 2: Explicit AM/PM with single/double digit hour (e.g., "8 PM", "8 AM", "8pm", "8am", "8 बजे")
+  const match2 = clean.match(/\b(\d{1,2})\s*(am|pm|pm\b|am\b|बजे)\b/i);
+  if (match2) {
+    let hours = parseInt(match2[1], 10);
+    const ampm = match2[2].toLowerCase();
+    const minutes = 0;
+
+    if (ampm === 'pm' && hours < 12) hours += 12;
+    if (ampm === 'am' && hours === 12) hours = 0;
+
+    if (hours >= 0 && hours <= 23) {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+  }
+
+  // Pattern 3: Hour with contextual time of day indicator (e.g., "8 in the evening", "8 in the morning", "8 o'clock in the evening")
+  const match3 = clean.match(/\b(\d{1,2})\s*(?:o'?clock)?\s*(?:in the|at)?\s*(morning|evening|afternoon|night|subah|shaam|dopahar|raat|सुबह|शाम|रात|दोपहर|সকাল|দুপুর|বিকেল)\b/i);
+  if (match3) {
+    let hours = parseInt(match3[1], 10);
+    const timeOfDay = match3[2].toLowerCase();
+    const minutes = 0;
+
+    const isEveningOrNight = ['evening', 'night', 'shaam', 'raat', 'शाम', 'रात', 'বিকেল'].includes(timeOfDay);
+    const isAfternoon = ['afternoon', 'dopahar', 'दोपहर', 'দুপুর'].includes(timeOfDay);
+    const isMorning = ['morning', 'subah', 'सुबह', 'সকাল'].includes(timeOfDay);
+
+    if ((isEveningOrNight || isAfternoon) && hours < 12) {
+      hours += 12;
+    } else if (isMorning && hours === 12) {
+      hours = 0;
+    }
+
+    if (hours >= 0 && hours <= 23) {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+  }
+
+  // Pattern 4: Fallback for "at 8" or "for 8" where context specifies time preposition
+  const match4 = clean.match(/\b(?:at|for|by|around|@)\s*(\d{1,2})\b/i);
+  if (match4) {
+    let hours = parseInt(match4[1], 10);
+    const minutes = 0;
+    if ((clean.includes('evening') || clean.includes('night') || clean.includes('शाम') || clean.includes('रात') || clean.includes('বিকেল')) && hours < 12) {
+      hours += 12;
+    } else if ((clean.includes('afternoon') || clean.includes('dopahar') || clean.includes('দুপুর')) && hours < 12 && hours >= 1 && hours <= 5) {
+      hours += 12;
+    }
+    if (hours >= 0 && hours <= 23) {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+  }
+
   return null;
 };
 
 const extractActivityDetails = (text: string): { title: string; category: 'medicine' | 'hydration' | 'meals' | 'exercise' | 'appointments' | 'family' | 'rest' | 'brain_game' | 'other' } => {
-  const clean = text.toLowerCase();
+  const clean = text.toLowerCase().trim();
   let title = '';
   let category: 'medicine' | 'hydration' | 'meals' | 'exercise' | 'appointments' | 'family' | 'rest' | 'brain_game' | 'other' = 'other';
 
-  if (clean.includes('walk') || clean.includes('exercise') || clean.includes('yoga') || clean.includes('टहलने') || clean.includes('व्यायाम') || clean.includes('হাঁটা')) {
-    title = 'Walk';
-    category = 'exercise';
-  } else if (clean.includes('medicine') || clean.includes('med') || clean.includes('pill') || clean.includes('tablet') || clean.includes('दवा') || clean.includes('औषध') || clean.includes('ওষুধ')) {
-    title = 'Take Medicine';
-    category = 'medicine';
-  } else if (clean.includes('water') || clean.includes('drink') || clean.includes('hydrate') || clean.includes('पानी') || clean.includes('जल')) {
+  // 1. SPECIFIC BEVERAGE EXTRACTION FIRST (Hydration / Drink Category)
+  // Check specific beverages BEFORE generic category matching so "drink coffee" is never mapped to "water"
+  if (clean.includes('coconut water') || clean.includes('nariyal pani') || clean.includes('नारियल पानी') || clean.includes('ডাবের জল')) {
+    title = 'Drink Coconut Water';
+    category = 'hydration';
+  } else if (clean.includes('lemonade') || clean.includes('nimbu pani') || clean.includes('नींबू पानी') || clean.includes('লেবুর জল')) {
+    title = 'Drink Lemonade';
+    category = 'hydration';
+  } else if (clean.includes('buttermilk') || clean.includes('chaas') || clean.includes('छाछ') || clean.includes('ঘোল')) {
+    title = 'Drink Buttermilk';
+    category = 'hydration';
+  } else if (clean.includes('smoothie') || clean.includes('स्मूदी') || clean.includes('স্মুদি')) {
+    title = 'Drink Smoothie';
+    category = 'hydration';
+  } else if (clean.includes('coffee') || clean.includes('coffie') || clean.includes('kapi') || clean.includes('कॉफ़ी') || clean.includes('कॉफी') || clean.includes('কফি')) {
+    title = clean.includes('have') ? 'Have Coffee' : 'Drink Coffee';
+    category = 'hydration';
+  } else if (clean.includes('tea') || clean.includes('chai') || clean.includes('cha') || clean.includes('चाय') || clean.includes('চা')) {
+    title = clean.includes('have') ? 'Have Tea' : 'Drink Tea';
+    category = 'hydration';
+  } else if (clean.includes('juice') || clean.includes('रस') || clean.includes('जूस') || clean.includes('জুস')) {
+    title = clean.includes('have') ? 'Have Juice' : 'Drink Juice';
+    category = 'hydration';
+  } else if (clean.includes('milk') || clean.includes('doodh') || clean.includes('dudh') || clean.includes('दूध') || clean.includes('দুধ')) {
+    if (clean.includes('have')) title = 'Have Milk';
+    else if (clean.includes('drink')) title = 'Drink Milk';
+    else title = 'Milk';
+    category = 'hydration';
+  } else if (clean.includes('water') || clean.includes('pani') || clean.includes('paani') || clean.includes('पानी') || clean.includes('जल') || clean.includes('জল') || clean.includes('hydrate')) {
     title = 'Drink Water';
     category = 'hydration';
+  }
+  // 2. OTHER EXPLICIT CATEGORIES
+  else if (clean.includes('walk') || clean.includes('exercise') || clean.includes('yoga') || clean.includes('टहलने') || clean.includes('व्यायाम') || clean.includes('হাঁটা')) {
+    if (clean.includes('walk in park') || clean.includes('park walk') || clean.includes('park')) title = 'Walk In Park';
+    else if (clean.includes('morning walk')) title = 'Morning Walk';
+    else if (clean.includes('evening walk')) title = 'Evening Walk';
+    else title = 'Walk';
+    category = 'exercise';
+  } else if (clean.includes('medicine') || clean.includes('med') || clean.includes('pill') || clean.includes('tablet') || clean.includes('दवा') || clean.includes('औषध') || clean.includes('ওষুধ')) {
+    if (clean.includes('evening medicine')) title = 'Evening Medicine';
+    else if (clean.includes('morning medicine')) title = 'Morning Medicine';
+    else if (clean.includes('night medicine')) title = 'Night Medicine';
+    else title = 'Take Medicine';
+    category = 'medicine';
   } else if (clean.includes('dinner') || clean.includes('lunch') || clean.includes('breakfast') || clean.includes('eat') || clean.includes('meal') || clean.includes('खाना') || clean.includes('খাবার')) {
     if (clean.includes('dinner') || clean.includes('रात का खाना')) title = 'Dinner';
     else if (clean.includes('lunch') || clean.includes('दोपहर का खाना')) title = 'Lunch';
@@ -1091,8 +1350,23 @@ const extractActivityDetails = (text: string): { title: string; category: 'medic
     title = 'Doctor Appointment';
     category = 'appointments';
   } else if (clean.includes('call') || clean.includes('talk') || clean.includes('family') || clean.includes('phone') || clean.includes('बात')) {
-    title = 'Call Family';
+    if (clean.includes('anu')) title = 'Call Anu';
+    else if (clean.includes('ramesh')) title = 'Call Ramesh';
+    else if (clean.includes('meena')) title = 'Call Meena';
+    else title = 'Call Family';
     category = 'family';
+  }
+
+  // 3. GENERIC ACTION + OBJECT EXTRACTION IF NOT MATCHED ABOVE
+  if (!title) {
+    const drinkMatch = clean.match(/\b(?:drink|have|sip|take a glass of|take a cup of|glass of|cup of)\s+([a-z\s]+?)(?:\s+at|\s+for|\s+by|\s+in|\s+tomorrow|\s+today|\s*\d|$)/i);
+    if (drinkMatch && drinkMatch[1].trim()) {
+      const beverageName = drinkMatch[1].trim();
+      const capitalizedBev = beverageName.charAt(0).toUpperCase() + beverageName.slice(1);
+      const actionVerb = clean.includes('have') ? 'Have' : 'Drink';
+      title = `${actionVerb} ${capitalizedBev}`;
+      category = 'hydration';
+    }
   }
 
   if (!title) {
@@ -1305,20 +1579,32 @@ export const voiceResponseTranslations: Record<string, Record<string, string>> =
   }
 };
 
-export const parseVoiceCommand = (text: string, currentLang: string = 'English', voiceContext: any = null): ParsedCommand => {
+export const parseVoiceCommand = (text: string, currentLang: string = 'English', contextDataOrVoiceContext: any = null): ParsedCommand => {
   let clean = text.trim().toLowerCase();
-  const punctuation = [".", ",", "/", "#", "!", "$", "%", "^", "&", "*", ";", ":", "{", "}", "=", "-", "_", "`", "~", "(", ")", "?"];
+  const punctuation = [".", ",", "/", "#", "!", "$", "%", "^", "&", "*", ";", "{", "}", "=", "_", "`", "~", "(", ")", "?"];
   punctuation.forEach(p => {
     clean = clean.split(p).join("");
   });
   clean = clean.replace(/\s{2,}/g, " ");
 
-  const dRes = parseDeterministicCommand(clean, currentLang, {
-    profile: storageService.getCurrentUser(),
-    reminders: storageService.getReminders(),
-    schedule: storageService.getSchedule(),
-    memories: storageService.getMemories()
-  }, voiceContext);
+  const isCustomContext = contextDataOrVoiceContext && (
+    contextDataOrVoiceContext.profile !== undefined ||
+    contextDataOrVoiceContext.reminders !== undefined ||
+    contextDataOrVoiceContext.schedule !== undefined ||
+    contextDataOrVoiceContext.memories !== undefined
+  );
+
+  const contextData = isCustomContext
+    ? contextDataOrVoiceContext
+    : {
+        profile: typeof storageService !== 'undefined' ? storageService.getCurrentUser() : null,
+        reminders: typeof storageService !== 'undefined' ? storageService.getReminders() : [],
+        schedule: typeof storageService !== 'undefined' ? storageService.getSchedule() : [],
+        memories: typeof storageService !== 'undefined' ? storageService.getMemories() : [],
+        games: typeof storageService !== 'undefined' ? storageService.getGames() : []
+      };
+
+  const dRes = parseDeterministicCommand(clean, currentLang, contextData, contextDataOrVoiceContext);
   if (dRes) return dRes;
 
   const vr = voiceResponseTranslations[currentLang] || voiceResponseTranslations.English;
@@ -1428,11 +1714,11 @@ export const parseVoiceCommand = (text: string, currentLang: string = 'English',
   }
 
   // Call contact
-  if (clean.includes('call') || clean.includes('phone') || clean.includes('contact') || clean.includes('फोन') || clean.includes('कॉल') || clean.includes('কল')) {
+  if (!clean.includes('remind') && !clean.includes('reminder') && !clean.includes('add') && !clean.includes('schedule') && (clean.includes('call') || clean.includes('phone') || clean.includes('contact') || clean.includes('फोन') || clean.includes('कॉल') || clean.includes('কল'))) {
     if (clean.includes('daughter') || clean.includes('anu') || clean.includes('son') || clean.includes('ramesh') || clean.includes('wife') || clean.includes('meena') || clean.includes('doctor') || clean.includes('barua') || clean.includes('অনু') || clean.includes('রিমেশ') || clean.includes('মীনা') || clean.includes('ডাক্তার') || clean.includes('बेटे') || clean.includes('पत्नी')) {
       let contactName = '';
       if (clean.includes('daughter') || clean.includes('anu') || clean.includes('অনু')) contactName = 'Anu';
-      else if (clean.includes('son') || clean.includes('ramesh') || clean.includes('রিমেশ') || clean.includes('बेटে')) contactName = 'Ramesh';
+      else if (clean.includes('son') || clean.includes('ramesh') || clean.includes('রিমেশ') || clean.includes('बेटे')) contactName = 'Ramesh';
       else if (clean.includes('wife') || clean.includes('meena') || clean.includes('মীনা') || clean.includes('पत्नी')) contactName = 'Meena';
       else if (clean.includes('doctor') || clean.includes('barua') || clean.includes('ডাক্তার')) contactName = 'Dr. Barua';
 
@@ -1453,7 +1739,7 @@ export const parseVoiceCommand = (text: string, currentLang: string = 'English',
   }
 
   // Emergency contact caregiver
-  if (clean.includes('call anu') || clean.includes('contact caregiver') || clean.includes('अनु को फोन') || clean.includes('केयरगिवर')) {
+  if (!clean.includes('remind') && !clean.includes('reminder') && !clean.includes('add') && !clean.includes('schedule') && (clean.includes('call anu') || clean.includes('contact caregiver') || clean.includes('अनु को फोन') || clean.includes('केयरगिवर'))) {
     return { 
       intent: 'CALL_CAREGIVER', 
       response: vr.callingCaregiver
@@ -1555,7 +1841,7 @@ export const parseVoiceCommand = (text: string, currentLang: string = 'English',
         response: vr.schedulePromptTitle,
         activityData: {
           title: '',
-          time: time || '18:00',
+          time: time || '',
           date,
           category,
           createReminder: true,
@@ -1583,7 +1869,7 @@ export const parseVoiceCommand = (text: string, currentLang: string = 'English',
 
     return {
       intent: 'CREATE_ACTIVITY',
-      response: vr.scheduleAddedSuccess.replace('{title}', title).replace('{time}', time),
+      response: vr.scheduleAddedSuccess.replace('{title}', title).replace('{time}', format12HourDisplay(time)),
       activityData: {
         title,
         time,

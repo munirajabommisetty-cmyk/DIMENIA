@@ -363,10 +363,10 @@ export const TalkToMe: React.FC = () => {
           setDialogText('Microphone recording produced no audio. Please speak louder.');
         } else if (err === 'model-missing') {
           setStatus('error');
-          setDialogText('Local model or executable is missing in the backend folder.');
+          setDialogText('Voice input is using offline mode. You can type your response below.');
         } else if (err === 'service-unavailable' || err === 'network') {
           setStatus('error');
-          setDialogText('Voice service is unavailable. Please check if the local backend server is running.');
+          setDialogText('Voice input is using offline mode. You can type your response below.');
         } else {
           setStatus('error');
           setDialogText('Voice recognition failed or process execution failed.');

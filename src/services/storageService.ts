@@ -364,7 +364,8 @@ export const storageService = {
       { gameId: 'game-6', gameName: 'Language & Word Memory', difficulty: 'Medium', progress: 0, bestScore: 0, completedToday: false, unlockedLevel: 1 }
     ];
     const list = this.get(this.getScopedKey(KEYS.GAMES), cleanDefaultGames);
-    const todayStr = new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     return list.map((g: any) => {
       const isCompletedToday = g.lastCompletedDate === todayStr ? (g.completedToday ?? false) : false;
       return {
@@ -376,10 +377,11 @@ export const storageService = {
   },
 
   saveGames(games: GameScore[]) {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const gamesToSave = games.map((g: any) => ({
       ...g,
-      lastCompletedDate: g.completedToday ? (g.lastCompletedDate || todayStr) : g.lastCompletedDate
+      lastCompletedDate: g.completedToday ? todayStr : g.lastCompletedDate
     }));
     this.set(this.getScopedKey(KEYS.GAMES), gamesToSave);
   },
