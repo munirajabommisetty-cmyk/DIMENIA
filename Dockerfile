@@ -16,7 +16,7 @@ WORKDIR /whisper-src
 RUN git clone -b v1.5.4 --single-branch https://github.com/ggerganov/whisper.cpp.git .
 
 # Build whisper-cli / main binary with shared library enabled & RPATH set to $ORIGIN
-RUN cmake -B build -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_RPATH="\$ORIGIN" -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON && cmake --build build --config Release
+RUN cmake -B build -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_RPATH='$ORIGIN' -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON && cmake --build build --config Release
 
 # Gather compiled binaries and shared libraries into dist-bin using dereferencing cp -L
 RUN mkdir -p /whisper-src/dist-bin && \
