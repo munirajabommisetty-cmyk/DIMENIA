@@ -1,7 +1,7 @@
 # ==============================================================================
 # STAGE 1: Build pinned whisper.cpp v1.5.4 native Linux binary
 # ==============================================================================
-FROM ubuntu:22.04 AS whisper-builder
+FROM node:20-slim AS whisper-builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -20,7 +20,9 @@ RUN cmake -B build -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_RPATH='$ORIGIN' -DCMAK
 
 # Gather compiled binaries and shared libraries into dist-bin using dereferencing cp -L
 RUN mkdir -p /whisper-src/dist-bin && \
-    find /whisper-src/build \( -name "whisper-cli" -o -name "main" -o -name "*.so*" \) -exec cp -L {} /whisper-src/dist-bin/ \;
+    find /whisper-src/build -name "whisper-cli" -exec cp -L {} /whisper-src/dist-bin/ \; 2>/dev/null || true && \
+    find /whisper-src/build -name "main" -exec cp -L {} /whisper-src/dist-bin/ \; 2>/dev/null || true && \
+    find /whisper-src/build -name "*.so*" -exec cp -L {} /whisper-src/dist-bin/ \; 2>/dev/null || true
 
 # Ensure libwhisper.so exists as a valid standalone ELF file in dist-bin
 RUN cd /whisper-src/dist-bin && \
@@ -133,6 +135,7 @@ RUN /app/backend/models/whisper/whisper-cli --help > /dev/null && \
 EXPOSE 5000
 
 CMD ["npm", "run", "start"]
+
 
 
 
