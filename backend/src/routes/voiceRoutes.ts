@@ -48,7 +48,8 @@ router.get('/voice/stt-status', (req, res) => {
       languages: voskStatus.languages
     },
     whisper: {
-      available: true
+      available: true,
+      version: 'whisper-linux-v2'
     },
     offline: true
   });
