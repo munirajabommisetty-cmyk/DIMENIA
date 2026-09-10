@@ -15,14 +15,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /whisper-src
 RUN git clone -b v1.5.4 --single-branch https://github.com/ggerganov/whisper.cpp.git .
 
-# Build whisper-cli / main binary
-RUN cmake -B build && cmake --build build --config Release
+# Build whisper-cli / main binary with shared library enabled
+RUN cmake -B build -DBUILD_SHARED_LIBS=ON && cmake --build build --config Release
 
-# Verify compiled Linux executable
-RUN if [ -f "/whisper-src/build/bin/whisper-cli" ]; then \
-        /whisper-src/build/bin/whisper-cli --help > /dev/null; \
-    elif [ -f "/whisper-src/build/bin/main" ]; then \
-        /whisper-src/build/bin/main --help > /dev/null; \
+# Gather compiled binaries and shared libraries into dist-bin
+# Note: cp -a preserves symlinks (libwhisper.so -> libwhisper.so.1 -> libwhisper.so.1.5.4)
+# and find without -type f matches both regular files and symlinks.
+RUN mkdir -p /whisper-src/dist-bin && \
+    find /whisper-src/build \( -name "whisper-cli" -o -name "main" -o -name "*.so*" \) -exec cp -a {} /whisper-src/dist-bin/ \;
+
+# Ensure libwhisper.so exists even if built without symlinks
+RUN if [ ! -e "/whisper-src/dist-bin/libwhisper.so" ]; then \
+        SO_FILE=$(find /whisper-src/dist-bin -name "*.so*" | head -n 1); \
+        if [ -n "$SO_FILE" ]; then \
+            cp -a "$SO_FILE" /whisper-src/dist-bin/libwhisper.so; \
+        fi; \
+    fi
+
+# Verify compiled Linux executable inside whisper-builder
+RUN if [ -f "/whisper-src/dist-bin/whisper-cli" ]; then \
+        LD_LIBRARY_PATH="/whisper-src/dist-bin:$LD_LIBRARY_PATH" /whisper-src/dist-bin/whisper-cli --help > /dev/null; \
+    elif [ -f "/whisper-src/dist-bin/main" ]; then \
+        LD_LIBRARY_PATH="/whisper-src/dist-bin:$LD_LIBRARY_PATH" /whisper-src/dist-bin/main --help > /dev/null; \
     else \
         echo "Error: Neither whisper-cli nor main executable found after build"; exit 1; \
     fi
@@ -49,14 +63,15 @@ RUN npm ci && npm ci --prefix backend
 # Copy full application source
 COPY . .
 
-# Copy compiled Linux whisper binary from STAGE 1
-COPY --from=whisper-builder /whisper-src/build/bin/ /app/whisper-bin/
+# Copy compiled Linux whisper binary and shared libraries from STAGE 1
+COPY --from=whisper-builder /whisper-src/dist-bin/ /app/whisper-bin/
 RUN mkdir -p /app/backend/models/whisper && \
     if [ -f "/app/whisper-bin/whisper-cli" ]; then \
-        cp /app/whisper-bin/whisper-cli /app/backend/models/whisper/whisper-cli; \
+        cp -a /app/whisper-bin/whisper-cli /app/backend/models/whisper/whisper-cli; \
     elif [ -f "/app/whisper-bin/main" ]; then \
-        cp /app/whisper-bin/main /app/backend/models/whisper/whisper-cli; \
+        cp -a /app/whisper-bin/main /app/backend/models/whisper/whisper-cli; \
     fi && \
+    cp -a /app/whisper-bin/*.so* /app/backend/models/whisper/ 2>/dev/null || true && \
     chmod +x /app/backend/models/whisper/whisper-cli && \
     rm -rf /app/whisper-bin
 
@@ -86,6 +101,7 @@ FROM node:20-slim AS runner
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=5000
+ENV LD_LIBRARY_PATH="/app/backend/models/whisper:/usr/local/lib:/usr/lib:${LD_LIBRARY_PATH}"
 
 WORKDIR /app
 
@@ -101,9 +117,20 @@ COPY --from=app-builder /app/dist ./dist
 COPY --from=app-builder /app/backend/dist ./backend/dist
 COPY --from=app-builder /app/backend/models ./backend/models
 
-# Ensure Linux whisper executable is executable in final image
-RUN chmod +x /app/backend/models/whisper/whisper-cli
+# Ensure Linux whisper executable is executable, copy shared libraries to system folders, register with ldconfig
+RUN chmod +x /app/backend/models/whisper/whisper-cli && \
+    mkdir -p /usr/local/lib /usr/lib /etc/ld.so.conf.d && \
+    cp -a /app/backend/models/whisper/*.so* /usr/local/lib/ 2>/dev/null || true && \
+    cp -a /app/backend/models/whisper/*.so* /usr/lib/ 2>/dev/null || true && \
+    echo "/app/backend/models/whisper" > /etc/ld.so.conf.d/whisper.conf && \
+    (ldconfig 2>/dev/null || true)
+
+# MANDATORY: Verify dynamic library linking with ldd and whisper-cli execution in STAGE 3 runner
+RUN ldd /app/backend/models/whisper/whisper-cli && \
+    /app/backend/models/whisper/whisper-cli --help > /dev/null && \
+    echo "[Docker Stage 3 Runner] whisper-cli verified and dynamic libraries loaded successfully!"
 
 EXPOSE 5000
 
 CMD ["npm", "run", "start"]
+

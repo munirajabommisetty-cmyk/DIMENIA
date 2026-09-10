@@ -126,9 +126,21 @@ export const whisperService = {
 
       console.log(`[STT] Executing local Whisper CLI: "${exePath}" ${args.join(' ')}`);
 
+      const exeDir = path.dirname(exePath);
+      const ldLibraryPath = [
+        exeDir,
+        '/usr/local/lib',
+        '/usr/lib',
+        process.env.LD_LIBRARY_PATH || ''
+      ].filter(Boolean).join(':');
+
       const { stdout } = await execFileAsync(exePath, args, {
-        cwd: path.dirname(exePath),
-        timeout: 25000
+        cwd: exeDir,
+        timeout: 25000,
+        env: {
+          ...process.env,
+          LD_LIBRARY_PATH: ldLibraryPath
+        }
       });
 
       let transcript = '';
