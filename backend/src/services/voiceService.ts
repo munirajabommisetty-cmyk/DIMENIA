@@ -87,13 +87,15 @@ export function patientAIQueryResolver(
   // 2. COGNITIVE & MEMORY PERFORMANCE QUERIES
   // =========================================================================
   const isCognitivePerfQuery = (
-    (matchesAny(['memory', 'memories', 'yaad', 'स्मृति', 'মেমরি']) && matchesAny(['power', 'improving', 'improvement', 'better', 'changed', 'progress', 'score', 'previous', 'performance', 'trend', 'compared', 'games', 'game', 'kaise improve', 'behtar', 'उन्नति', 'উন্নতি'])) ||
+    (matchesAny(['memory', 'memories', 'yaad', 'स्मृति', 'মেমরি', 'brain training', 'brain game', 'brain games']) && matchesAny(['power', 'improving', 'improvement', 'better', 'changed', 'progress', 'score', 'previous', 'performance', 'trend', 'compared', 'games', 'game', 'kaise improve', 'behtar', 'उन्नति', 'উন্নতি', 'doing'])) ||
     matchesAny([
       'how is my memory power', 'memory power improving', 'is my memory getting better',
       'how has my memory performance changed', 'am i improving at memory games',
       'how was my memory performance compared', 'what is my memory score',
       'cognitive performance', 'how am i improving', 'overall cognitive score',
-      'brain performance', 'my progress in games', 'how is my attention', 'attention score'
+      'brain performance', 'my progress in games', 'how is my attention', 'attention score',
+      'brain training progress', 'how am i doing with brain training', 'what is my brain training progress',
+      'brain training'
     ])
   );
 
@@ -1183,7 +1185,15 @@ export const voiceService = {
       return { intent: 'OPEN_SETTINGS', path: '/settings', response: 'Opening settings.' };
     }
 
-    if (clean.includes('caregiver dashboard') || clean.includes('caregiver panel')) {
+    if (clean.includes('garden') || clean.includes('mind garden')) {
+      return { intent: 'NAVIGATION', target: 'garden', path: '/garden', response: 'Opening Mind Garden.' };
+    }
+
+    if (clean.includes('health') || clean.includes('medical')) {
+      return { intent: 'NAVIGATION', target: 'settings', path: '/settings', response: 'Opening health information.' };
+    }
+
+    if (clean.includes('caregiver dashboard') || clean.includes('caregiver panel') || clean.includes('caregiver')) {
       return { intent: 'OPEN_CAREGIVER', path: '/caregiver', response: 'Opening caregiver dashboard.' };
     }
 
@@ -1238,6 +1248,12 @@ export const voiceService = {
       } else if (clean.includes('medicine') || clean.includes('med') || clean.includes('pill') || clean.includes('tablet') || clean.includes('दवा') || clean.includes('औषध') || clean.includes('ওষুধ')) {
         title = 'Take Medicine';
         category = 'medicine';
+      } else if (clean.includes('coffee')) {
+        title = 'Drink Coffee';
+        category = 'hydration';
+      } else if (clean.includes('tea')) {
+        title = 'Drink Tea';
+        category = 'hydration';
       } else if (clean.includes('water') || clean.includes('drink') || clean.includes('hydrate') || clean.includes('पानी') || clean.includes('जल')) {
         title = 'Drink Water';
         category = 'hydration';
