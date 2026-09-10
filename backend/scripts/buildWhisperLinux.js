@@ -14,13 +14,16 @@ if (!fs.existsSync(whisperDir)) {
   fs.mkdirSync(whisperDir, { recursive: true });
 }
 
-let needsBuild = !fs.existsSync(targetBin);
+const versionFile = path.join(whisperDir, 'whisper-cli.version');
+const TARGET_VERSION = 'whisper-linux-static-v1.5.4';
+
+let needsBuild = !fs.existsSync(targetBin) || !fs.existsSync(versionFile) || fs.readFileSync(versionFile, 'utf8').trim() !== TARGET_VERSION;
 
 if (!needsBuild) {
   try {
     fs.chmodSync(targetBin, 0o755);
     execSync(`"${targetBin}" --help`, { stdio: 'ignore' });
-    console.log(`[setup-whisper] Verified working whisper-cli binary at: ${targetBin}`);
+    console.log(`[setup-whisper] Verified working whisper-cli binary (${TARGET_VERSION}) at: ${targetBin}`);
     process.exit(0);
   } catch (e) {
     console.warn('[setup-whisper] Existing whisper-cli binary failed test execution. Rebuilding...');
@@ -48,7 +51,8 @@ if (needsBuild) {
     if (builtBin && fs.existsSync(builtBin)) {
       fs.copyFileSync(builtBin, targetBin);
       fs.chmodSync(targetBin, 0o755);
-      console.log(`[setup-whisper] Installed static whisper-cli to ${targetBin}`);
+      fs.writeFileSync(versionFile, TARGET_VERSION);
+      console.log(`[setup-whisper] Installed static whisper-cli (${TARGET_VERSION}) to ${targetBin}`);
     }
 
     execSync(`"${targetBin}" --help`, { stdio: 'ignore' });
