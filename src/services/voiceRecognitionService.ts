@@ -413,7 +413,14 @@ export class VoiceRecognitionService {
               console.log(`[VOICE] Final transcript: "${cleanTranscript}"`);
               callbacks?.onResult(cleanTranscript);
             } else {
-              console.warn('[VOICE] STT returned empty or unsuccessful transcript', result);
+              console.warn('[VOICE] STT returned empty or unsuccessful transcript', {
+                status: response.status,
+                contentType: response.headers.get('content-type'),
+                success: result?.success,
+                error: result?.error || result?.message || null,
+                transcriptLength: rawText.length,
+                keys: result ? Object.keys(result) : []
+              });
               callbacks?.onError('empty-transcript');
             }
           } catch (e: any) {
