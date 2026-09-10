@@ -15,22 +15,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /whisper-src
 RUN git clone -b v1.5.4 --single-branch https://github.com/ggerganov/whisper.cpp.git .
 
-# Build whisper-cli (building shared + static so libwhisper.so is generated alongside whisper-cli)
-RUN cmake -B build -DBUILD_SHARED_LIBS=ON -DWHISPER_BUILD_EXAMPLES=ON -DWHISPER_OPENMP=OFF && \
+# Build whisper-cli statically (BUILD_SHARED_LIBS=OFF so libwhisper is linked statically into whisper-cli)
+RUN cmake -B build -DBUILD_SHARED_LIBS=OFF -DWHISPER_BUILD_EXAMPLES=ON -DWHISPER_OPENMP=OFF && \
     cmake --build build --config Release
 
-# Gather compiled executable AND all shared libraries into dist-bin
+# Gather compiled static executable into dist-bin
 RUN mkdir -p /whisper-src/dist-bin && \
     (cp -f /whisper-src/build/bin/whisper-cli /whisper-src/dist-bin/whisper-cli 2>/dev/null || \
      cp -f /whisper-src/build/bin/main /whisper-src/dist-bin/whisper-cli 2>/dev/null || \
      find /whisper-src/build -name "whisper-cli" -type f -exec cp -f {} /whisper-src/dist-bin/whisper-cli \; 2>/dev/null || \
-     find /whisper-src/build -name "main" -type f -exec cp -f {} /whisper-src/dist-bin/whisper-cli \; 2>/dev/null) && \
-    (find /whisper-src/build -name "*.so*" -type f -exec cp -a {} /whisper-src/dist-bin/ \; 2>/dev/null || true)
+     find /whisper-src/build -name "main" -type f -exec cp -f {} /whisper-src/dist-bin/whisper-cli \; 2>/dev/null)
 
-# Verify executable inside builder with LD_LIBRARY_PATH pointing to dist-bin
+# Verify static executable inside builder
 RUN chmod +x /whisper-src/dist-bin/whisper-cli && \
-    LD_LIBRARY_PATH=/whisper-src/dist-bin:$LD_LIBRARY_PATH /whisper-src/dist-bin/whisper-cli --help > /dev/null && \
-    echo "[Docker Stage 1] whisper-cli binary and shared libraries compiled and verified successfully!"
+    /whisper-src/dist-bin/whisper-cli --help > /dev/null && \
+    echo "[Docker Stage 1] Standalone static whisper-cli binary compiled and verified successfully!"
 
 # ==============================================================================
 # STAGE 2: Node.js application builder (installs devDependencies for compilation)
@@ -100,16 +99,12 @@ COPY --from=app-builder /app/dist ./dist
 COPY --from=app-builder /app/backend/dist ./backend/dist
 COPY --from=app-builder /app/backend/models ./backend/models
 
-# Copy shared libraries to /usr/local/lib and run ldconfig
-RUN (cp -a /app/backend/models/whisper/*.so* /usr/local/lib/ 2>/dev/null || true) && \
-    ldconfig 2>/dev/null || true
-
 # Ensure Linux whisper executable is executable
 RUN chmod +x /app/backend/models/whisper/whisper-cli
 
-# MANDATORY: Verify static whisper-cli execution in STAGE 3 runner
+# MANDATORY: Verify standalone static whisper-cli execution in STAGE 3 runner
 RUN /app/backend/models/whisper/whisper-cli --help > /dev/null && \
-    echo "[Docker Stage 3 Runner] whisper-cli verified and executed successfully!"
+    echo "[Docker Stage 3 Runner] Standalone static whisper-cli verified and executed successfully!"
 
 EXPOSE 5000
 

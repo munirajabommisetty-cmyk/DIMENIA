@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import fs from 'fs';
 import { voiceService } from '../services/voiceService';
 import { whisperService } from '../services/whisperService';
 import { voskService } from '../services/voskService';
@@ -48,6 +49,9 @@ router.get('/voice/version', (req, res) => {
 
 router.get('/voice/stt-status', (req, res) => {
   const voskStatus = voskService.getStatus();
+  const exePath = whisperService.getExecutablePath();
+  const modelPath = whisperService.getModelPath();
+  const whisperAvailable = Boolean(exePath && fs.existsSync(exePath) && modelPath && fs.existsSync(modelPath));
 
   res.json({
     success: true,
@@ -56,8 +60,10 @@ router.get('/voice/stt-status', (req, res) => {
       languages: voskStatus.languages
     },
     whisper: {
-      available: true,
-      version: 'whisper-linux-v2'
+      available: whisperAvailable,
+      executableExists: Boolean(exePath && fs.existsSync(exePath)),
+      modelExists: Boolean(modelPath && fs.existsSync(modelPath)),
+      version: 'whisper-linux-static-v1.5.4'
     },
     offline: true
   });
