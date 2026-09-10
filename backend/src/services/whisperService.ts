@@ -99,22 +99,24 @@ export const whisperService = {
     console.log(`[STT] Model Exists: ${modelPath ? fs.existsSync(modelPath) : false}`);
     if (exePath && process.platform !== 'win32') {
       const exeDir = path.dirname(exePath);
-      const libPath = path.join(exeDir, 'libwhisper.so');
-      console.log(`[STT] Shared Library libwhisper.so Exists: ${fs.existsSync(libPath)}`);
-      if (!fs.existsSync(libPath)) {
-        try {
-          const files = fs.readdirSync(exeDir);
-          for (const file of files) {
-            if (file.includes('.so') && file !== 'libwhisper.so') {
-              const srcPath = path.join(exeDir, file);
-              fs.copyFileSync(srcPath, libPath);
-              fs.chmodSync(libPath, 0o755);
-              console.log(`[STT] Created ${libPath} from ${srcPath}`);
-              break;
+      const neededLibs = ['libwhisper.so', 'libwhisper.so.1', 'libwhisper.so.1.5.4'];
+      for (const libName of neededLibs) {
+        const libPath = path.join(exeDir, libName);
+        if (!fs.existsSync(libPath)) {
+          try {
+            const files = fs.readdirSync(exeDir);
+            for (const file of files) {
+              if (file.includes('.so')) {
+                const srcPath = path.join(exeDir, file);
+                fs.copyFileSync(srcPath, libPath);
+                fs.chmodSync(libPath, 0o755);
+                console.log(`[STT] Created ${libPath} from ${srcPath}`);
+                break;
+              }
             }
+          } catch (e) {
+            console.warn(`[STT] Failed to create ${libName} fallback:`, e);
           }
-        } catch (e) {
-          console.warn('[STT] Failed to create libwhisper.so fallback:', e);
         }
       }
     }

@@ -16,27 +16,31 @@ WORKDIR /whisper-src
 RUN git clone -b v1.5.4 --single-branch https://github.com/ggerganov/whisper.cpp.git .
 
 # Build static whisper-cli (linking libwhisper statically so binary is self-contained)
-RUN cmake -B build-static -DBUILD_SHARED_LIBS=OFF && cmake --build build-static --config Release
+RUN cmake -B build-static -DBUILD_SHARED_LIBS=OFF -DWHISPER_BUILD_EXAMPLES=ON && \
+    cmake --build build-static --config Release
 
 # Build shared libwhisper.so
-RUN cmake -B build-shared -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_RPATH='$ORIGIN' -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON && cmake --build build-shared --config Release
+RUN cmake -B build-shared -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_RPATH='$ORIGIN' -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON && \
+    cmake --build build-shared --config Release
 
 # Gather compiled binaries and shared libraries into dist-bin using dereferencing cp -L
 RUN mkdir -p /whisper-src/dist-bin && \
-    find /whisper-src/build-static -name "whisper-cli" -exec cp -L {} /whisper-src/dist-bin/ \; 2>/dev/null || true && \
-    find /whisper-src/build-static -name "main" -exec cp -L {} /whisper-src/dist-bin/ \; 2>/dev/null || true && \
+    (cp -f /whisper-src/build-static/bin/whisper-cli /whisper-src/dist-bin/ 2>/dev/null || \
+     cp -f /whisper-src/build-static/bin/main /whisper-src/dist-bin/whisper-cli 2>/dev/null || \
+     find /whisper-src/build-static -name "main" -exec cp -f {} /whisper-src/dist-bin/whisper-cli \; 2>/dev/null || \
+     find /whisper-src/build-static -name "whisper-cli" -exec cp -f {} /whisper-src/dist-bin/whisper-cli \; 2>/dev/null || true) && \
     find /whisper-src/build-shared -name "*.so*" -exec cp -L {} /whisper-src/dist-bin/ \; 2>/dev/null || true
 
-# Ensure libwhisper.so exists as a valid standalone ELF file in dist-bin
+# Ensure all shared library symlinks/copies (libwhisper.so, libwhisper.so.1, libwhisper.so.1.5.4) exist
 RUN cd /whisper-src/dist-bin && \
-    if [ ! -f "libwhisper.so" ]; then \
-        for f in *.so*; do \
-            if [ -f "$f" ]; then \
-                cp -f "$f" libwhisper.so 2>/dev/null || true; \
-                break; \
-            fi; \
-        done; \
-    fi
+    for f in *.so*; do \
+        if [ -f "$f" ]; then \
+            cp -f "$f" libwhisper.so 2>/dev/null || true; \
+            cp -f "$f" libwhisper.so.1 2>/dev/null || true; \
+            cp -f "$f" libwhisper.so.1.5.4 2>/dev/null || true; \
+            break; \
+        fi; \
+    done
 
 # Verify compiled Linux executable inside whisper-builder
 RUN if [ -f "/whisper-src/dist-bin/whisper-cli" ]; then \
@@ -128,6 +132,18 @@ RUN chmod +x /app/backend/models/whisper/whisper-cli && \
     mkdir -p /usr/local/lib /usr/lib /etc/ld.so.conf.d && \
     cp -L /app/backend/models/whisper/*.so* /usr/local/lib/ 2>/dev/null || true && \
     cp -L /app/backend/models/whisper/*.so* /usr/lib/ 2>/dev/null || true && \
+    cd /app/backend/models/whisper && \
+    (for f in *.so*; do \
+        if [ -f "$f" ]; then \
+            cp -f "$f" libwhisper.so 2>/dev/null || true; \
+            cp -f "$f" libwhisper.so.1 2>/dev/null || true; \
+            cp -f "$f" /usr/local/lib/libwhisper.so 2>/dev/null || true; \
+            cp -f "$f" /usr/local/lib/libwhisper.so.1 2>/dev/null || true; \
+            cp -f "$f" /usr/lib/libwhisper.so 2>/dev/null || true; \
+            cp -f "$f" /usr/lib/libwhisper.so.1 2>/dev/null || true; \
+            break; \
+        fi; \
+    done) && \
     echo "/app/backend/models/whisper" > /etc/ld.so.conf.d/whisper.conf && \
     (ldconfig 2>/dev/null || true)
 
