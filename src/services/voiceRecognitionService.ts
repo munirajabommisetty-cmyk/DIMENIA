@@ -388,20 +388,28 @@ export class VoiceRecognitionService {
               return 'http://localhost:5000/api';
             })();
 
-            const response = await fetch(`${apiBaseUrl}/voice/transcribe`, {
+            const targetUrl = `${apiBaseUrl}/voice/transcribe`;
+            console.log(`[STT DEBUG] URL: ${targetUrl}`);
+            console.log(`[STT DEBUG] METHOD: POST`);
+            console.log(`[STT DEBUG] CONTENT TYPE: application/json`);
+            console.log(`[STT DEBUG] REQUEST SIZE: ${base64Data.length} bytes`);
+
+            const response = await fetch(targetUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ audio: base64Data, language: whisperLang })
             });
 
-            if (!response.ok) {
-              const errBody = await response.json().catch(() => ({}));
-              throw new Error(errBody.error || `HTTP ${response.status}`);
-            }
+            console.log(`[STT DEBUG] HTTP STATUS: ${response.status}`);
+            const result = await response.json().catch(() => ({}));
+            console.log(`[STT DEBUG] RESPONSE BODY:`, JSON.stringify(result));
 
-            const result = await response.json();
-            if (result && result.success && result.transcript && result.transcript.trim().length > 0) {
-              const cleanTranscript = result.transcript.trim();
+            const rawText = result?.transcript || result?.text || '';
+            console.log(`[STT DEBUG] RESPONSE TRANSCRIPT: "${rawText}"`);
+            console.log(`[STT DEBUG] TRANSCRIPT LENGTH: ${rawText.length}`);
+
+            if (result && (result.success !== false) && rawText.trim().length > 0) {
+              const cleanTranscript = rawText.trim();
               console.log(`[VOICE] Final transcript: "${cleanTranscript}"`);
               callbacks?.onResult(cleanTranscript);
             } else {

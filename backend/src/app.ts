@@ -29,12 +29,15 @@ const allowedOrigins = process.env.FRONTEND_URL
     ];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: true,
   credentials: true
 }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Root health check endpoint for proxy and monitor probes
+app.use('/', healthRoutes);
 
 // Bind Router Prefixes
 app.use('/api', healthRoutes);

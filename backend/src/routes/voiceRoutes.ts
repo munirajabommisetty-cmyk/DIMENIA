@@ -67,7 +67,11 @@ router.post('/voice/transcribe', async (req, res) => {
   try {
     const { audio, language } = req.body;
 
+    console.log('[STT DEBUG] request received');
+    console.log(`[STT DEBUG] content type: ${req.headers['content-type']}`);
+
     if (!audio) {
+      console.warn('[STT DEBUG] No audio data provided');
       return res.status(400).json({
         success: false,
         error: 'No audio data provided'
@@ -79,9 +83,7 @@ router.post('/voice/transcribe', async (req, res) => {
       'base64'
     );
 
-    console.log(
-      `[STT] Received audio for Hugging Face Whisper. Size: ${audioBuffer.length} bytes`
-    );
+    console.log(`[STT DEBUG] byte size: ${audioBuffer.length}`);
 
     const transcript =
       await whisperService.transcribe(
@@ -89,13 +91,15 @@ router.post('/voice/transcribe', async (req, res) => {
         language
       );
 
+    console.log(`[STT DEBUG] backend returned transcript: "${transcript}"`);
+
     res.json({
       success: true,
       transcript
     });
   } catch (error: any) {
     console.error(
-      '[STT] Backend transcription error:',
+      '[STT DEBUG] Backend transcription error:',
       error
     );
 

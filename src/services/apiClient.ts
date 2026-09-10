@@ -50,7 +50,8 @@ export const apiClient = {
   async checkHealth(): Promise<boolean> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1000);
+      // Increase timeout to 8000ms to gracefully handle Render free-tier cold starts
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       const res = await fetch(`${BASE_URL}/health`, {
         method: 'GET',
@@ -63,7 +64,7 @@ export const apiClient = {
         return true;
       }
     } catch (e) {
-      // Ignored: service is offline
+      console.warn('[Second Brain Health Check] Health check timed out or offline:', e);
     }
     this.setStatus('local');
     return false;
@@ -73,7 +74,8 @@ export const apiClient = {
   async request<T>(path: string, options: RequestInit = {}): Promise<T | null> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500); // Fast timeout for local services
+      // Increase timeout to 30000ms to allow local inference and network STT processing
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const url = path.startsWith('http') ? path : `${BASE_URL}${path}`;
       const response = await fetch(url, {

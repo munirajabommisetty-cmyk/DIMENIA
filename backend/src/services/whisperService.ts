@@ -146,7 +146,8 @@ export const whisperService = {
 
     try {
       fs.writeFileSync(tempWavPath, audioBuffer);
-      console.log(`[STT] Saved temporary audio WAV file: ${tempWavPath} (${audioBuffer.length} bytes)`);
+      console.log(`[STT DEBUG] temporary WAV: ${tempWavPath}`);
+      console.log(`[STT DEBUG] temporary WAV size: ${audioBuffer.length}`);
 
       const langFlag = language || 'en';
       const args = [
@@ -160,9 +161,12 @@ export const whisperService = {
         '-t', '4'
       ];
 
-      console.log(`[STT] Executing local Whisper CLI: "${exePath}" ${args.join(' ')}`);
-
       const exeDir = path.dirname(exePath);
+      console.log(`[STT DEBUG] Whisper executable: ${exePath}`);
+      console.log(`[STT DEBUG] Whisper model: ${modelPath}`);
+      console.log(`[STT DEBUG] working directory: ${exeDir}`);
+      console.log(`[STT DEBUG] command: "${exePath}" ${args.join(' ')}`);
+
       const ldLibraryPath = [
         exeDir,
         '/usr/local/lib',
@@ -188,6 +192,7 @@ export const whisperService = {
 
       let stdout = '';
       let stderr = '';
+      let exitCode = 0;
       if (process.platform === 'win32') {
         const res = await execFileAsync(exePath, args, {
           cwd: exeDir,
@@ -204,7 +209,7 @@ export const whisperService = {
           stdout = res.stdout || '';
           stderr = res.stderr || '';
         } catch (execFileErr: any) {
-          console.warn(`[STT] execFile direct execution failed: ${execFileErr.message}. Attempting shell exec fallback...`);
+          console.warn(`[STT DEBUG] execFile direct execution failed: ${execFileErr.message}. Attempting shell exec fallback...`);
           const shellCmd = `LD_LIBRARY_PATH="${ldLibraryPath}" ${preloadPrefix}"${exePath}" ${args.join(' ')}`;
           const res = await execAsync(shellCmd, {
             cwd: exeDir,
@@ -220,7 +225,11 @@ export const whisperService = {
         }
       }
 
-      console.log(`[STT] Whisper stdout length: ${stdout.length}, stderr length: ${stderr.length}`);
+      console.log(`[STT DEBUG] exit code: ${exitCode}`);
+      console.log(`[STT DEBUG] stdout length: ${stdout.length}`);
+      console.log(`[STT DEBUG] stderr length: ${stderr.length}`);
+      if (stdout.length > 0) console.log(`[STT DEBUG] raw stdout: "${stdout.trim()}"`);
+      if (stderr.length > 0) console.log(`[STT DEBUG] raw stderr: "${stderr.trim()}"`);
 
       let transcript = '';
 
