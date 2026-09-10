@@ -96,6 +96,10 @@ export const whisperService = {
     console.log(`[STT] Whisper Model: ${modelPath || 'NOT FOUND'}`);
     console.log(`[STT] Executable Exists: ${exePath ? fs.existsSync(exePath) : false}`);
     console.log(`[STT] Model Exists: ${modelPath ? fs.existsSync(modelPath) : false}`);
+    if (exePath && process.platform !== 'win32') {
+      const libPath = path.join(path.dirname(exePath), 'libwhisper.so');
+      console.log(`[STT] Shared Library libwhisper.so Exists: ${fs.existsSync(libPath)}`);
+    }
 
     if (!exePath || !modelPath) {
       console.error('[STT] Local Whisper CLI executable or model binary missing.', { exePath, modelPath, platform: process.platform });
