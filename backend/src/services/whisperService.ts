@@ -217,14 +217,32 @@ export const whisperService = {
           stderr = res.stderr || '';
         } catch (execFileErr: any) {
           console.warn(`[STT DEBUG] execFile direct execution failed: ${execFileErr.message}. Attempting shell exec fallback...`);
-          const shellCmd = `LD_LIBRARY_PATH="${ldLibraryPath}" ${preloadPrefix}"${exePath}" ${args.join(' ')}`;
-          const res = await execAsync(shellCmd, {
-            cwd: exeDir,
-            timeout: 25000,
-            env: envVars
-          });
-          stdout = res.stdout || '';
-          stderr = res.stderr || '';
+          try {
+            const shellCmd = `LD_LIBRARY_PATH="${ldLibraryPath}" ${preloadPrefix}"${exePath}" ${args.join(' ')}`;
+            const res = await execAsync(shellCmd, {
+              cwd: exeDir,
+              timeout: 25000,
+              env: envVars
+            });
+            stdout = res.stdout || '';
+            stderr = res.stderr || '';
+          } catch (shellErr: any) {
+            const errMsg = `${execFileErr.message || ''} ${shellErr.message || ''}`;
+            if (errMsg.includes('libwhisper.so') || errMsg.includes('shared object file') || errMsg.includes('127')) {
+              console.warn('[STT] Detected missing dynamic library on Linux runtime. Triggering self-healing static build...');
+              const staticExe = await this.ensureStaticLinuxBinary(exeDir);
+              if (staticExe) {
+                console.log(`[STT] Self-healing complete. Retrying transcription using static binary: ${staticExe}`);
+                const res = await execFileAsync(staticExe, args, { cwd: path.dirname(staticExe), timeout: 25000 });
+                stdout = res.stdout || '';
+                stderr = res.stderr || '';
+              } else {
+                throw shellErr;
+              }
+            } else {
+              throw shellErr;
+            }
+          }
         }
       }
 
@@ -288,5 +306,37 @@ export const whisperService = {
         // Silently ignore cleanup errors
       }
     }
+  },
+
+  async ensureStaticLinuxBinary(targetDir: string): Promise<string | null> {
+    if (process.platform === 'win32') return null;
+    const staticBin = path.join(targetDir, 'whisper-cli-static');
+    if (fs.existsSync(staticBin)) {
+      try {
+        fs.chmodSync(staticBin, 0o755);
+        return staticBin;
+      } catch (e) {}
+    }
+
+    try {
+      console.log('[STT] Building static whisper-cli inline on Linux runtime...');
+      const tmpDir = path.resolve(os.tmpdir(), `whisper_static_build_${Date.now()}`);
+      fs.mkdirSync(tmpDir, { recursive: true });
+
+      const buildCmd = `git clone -b v1.5.4 --single-branch https://github.com/ggerganov/whisper.cpp.git . && cmake -B build -DBUILD_SHARED_LIBS=OFF -DWHISPER_BUILD_EXAMPLES=ON -DWHISPER_OPENMP=OFF && cmake --build build --config Release`;
+      await execAsync(buildCmd, { cwd: tmpDir, timeout: 120000 });
+
+      const builtPath = path.join(tmpDir, 'build/bin/whisper-cli');
+      if (fs.existsSync(builtPath)) {
+        fs.copyFileSync(builtPath, staticBin);
+        fs.chmodSync(staticBin, 0o755);
+        console.log(`[STT] Successfully built and cached static whisper-cli at ${staticBin}`);
+        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (e) {}
+        return staticBin;
+      }
+    } catch (e: any) {
+      console.error('[STT] Runtime static build failed:', e.message);
+    }
+    return null;
   }
 };
