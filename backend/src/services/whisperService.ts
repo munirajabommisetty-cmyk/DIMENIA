@@ -190,6 +190,12 @@ export const whisperService = {
       }
       const preloadPrefix = ldPreloadPath ? `LD_PRELOAD="${ldPreloadPath}" ` : '';
 
+      const envVars = {
+        ...process.env,
+        LD_LIBRARY_PATH: ldLibraryPath,
+        ...(ldPreloadPath ? { LD_PRELOAD: ldPreloadPath } : {})
+      };
+
       let stdout = '';
       let stderr = '';
       let exitCode = 0;
@@ -204,7 +210,8 @@ export const whisperService = {
         try {
           const res = await execFileAsync(exePath, args, {
             cwd: exeDir,
-            timeout: 25000
+            timeout: 25000,
+            env: envVars
           });
           stdout = res.stdout || '';
           stderr = res.stderr || '';
@@ -214,11 +221,7 @@ export const whisperService = {
           const res = await execAsync(shellCmd, {
             cwd: exeDir,
             timeout: 25000,
-            env: {
-              ...process.env,
-              LD_LIBRARY_PATH: ldLibraryPath,
-              ...(ldPreloadPath ? { LD_PRELOAD: ldPreloadPath } : {})
-            }
+            env: envVars
           });
           stdout = res.stdout || '';
           stderr = res.stderr || '';
