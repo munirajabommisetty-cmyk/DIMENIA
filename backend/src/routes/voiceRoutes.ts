@@ -38,6 +38,14 @@ router.post('/voice/command', async (req, res) => {
   }
 });
 
+router.get('/voice/version', (req, res) => {
+  res.json({
+    success: true,
+    version: 'whisper-linux-v10-static-322e9fd',
+    timestamp: new Date().toISOString()
+  });
+});
+
 router.get('/voice/stt-status', (req, res) => {
   const voskStatus = voskService.getStatus();
 
