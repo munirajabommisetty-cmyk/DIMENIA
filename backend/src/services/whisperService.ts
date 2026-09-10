@@ -129,18 +129,30 @@ export const whisperService = {
       ? path.resolve(process.cwd(), 'backend/temp') 
       : os.tmpdir();
     
-    const tempWavPath = path.join(tempDir, `whisper_${uniqueId}.wav`);
-    const tempTxtPath = `${tempWavPath}.txt`;
+    const outputPrefix = path.join(tempDir, `whisper_${uniqueId}`);
+    const tempWavPath = `${outputPrefix}.wav`;
+    const candidateTxtPaths = [
+      `${outputPrefix}.txt`,
+      `${tempWavPath}.txt`,
+      path.join(tempDir, `whisper_${uniqueId}.txt`),
+      path.join(tempDir, `whisper_${uniqueId}.wav.txt`),
+      path.join(path.dirname(exePath), `whisper_${uniqueId}.txt`),
+      path.join(path.dirname(exePath), `whisper_${uniqueId}.wav.txt`),
+      path.join(process.cwd(), `whisper_${uniqueId}.txt`),
+      path.join(process.cwd(), `whisper_${uniqueId}.wav.txt`)
+    ];
 
     try {
       fs.writeFileSync(tempWavPath, audioBuffer);
-      console.log(`[STT] Saved temporary audio WAV file: ${tempWavPath}`);
+      console.log(`[STT] Saved temporary audio WAV file: ${tempWavPath} (${audioBuffer.length} bytes)`);
 
       const langFlag = language || 'en';
       const args = [
         '-m', modelPath,
         '-f', tempWavPath,
         '-l', langFlag,
+        '-of', outputPrefix,
+        '-otxt',
         '--output-txt',
         '--no-timestamps',
         '-t', '4'
@@ -157,6 +169,7 @@ export const whisperService = {
       ].filter(Boolean).join(':');
 
       let stdout = '';
+      let stderr = '';
       if (process.platform === 'win32') {
         const res = await execFileAsync(exePath, args, {
           cwd: exeDir,
@@ -166,7 +179,8 @@ export const whisperService = {
             LD_LIBRARY_PATH: ldLibraryPath
           }
         });
-        stdout = res.stdout;
+        stdout = res.stdout || '';
+        stderr = res.stderr || '';
       } else {
         const shellCmd = `LD_LIBRARY_PATH="${ldLibraryPath}" "${exePath}" ${args.join(' ')}`;
         console.log(`[STT] Shell execution command: ${shellCmd}`);
@@ -178,26 +192,50 @@ export const whisperService = {
             LD_LIBRARY_PATH: ldLibraryPath
           }
         });
-        stdout = res.stdout;
+        stdout = res.stdout || '';
+        stderr = res.stderr || '';
       }
+
+      console.log(`[STT] Whisper stdout length: ${stdout.length}, stderr length: ${stderr.length}`);
 
       let transcript = '';
-      if (fs.existsSync(tempTxtPath)) {
-        transcript = fs.readFileSync(tempTxtPath, 'utf8').trim();
-      } else if (stdout && stdout.trim().length > 0) {
-        // Parse brackets or raw stdout text if txt file wasn't generated
-        const lines = stdout.split('\n');
-        const textLines = lines
-          .map(l => l.replace(/\[\d{2}:\d{2}:\d{2}\.\d{3}\s*-->\s*\d{2}:\d{2}:\d{2}\.\d{3}\]\s*/g, '').trim())
-          .filter(l => l.length > 0 && !l.startsWith('whisper_') && !l.startsWith('system_info') && !l.startsWith('read_audio_data'));
-        transcript = textLines.join(' ').trim();
+
+      // 1. Search across all potential TXT output file locations
+      for (const p of candidateTxtPaths) {
+        if (fs.existsSync(p)) {
+          const content = fs.readFileSync(p, 'utf8').trim();
+          if (content.length > 0) {
+            transcript = content;
+            console.log(`[STT] Read transcript from generated file "${p}": "${transcript}"`);
+            break;
+          }
+        }
       }
 
-      console.log(`[STT] Offline Whisper transcript output: "${transcript}"`);
+      // 2. Fallback: Parse transcript from stdout/stderr if TXT file was not created or empty
+      if (!transcript) {
+        const combinedOutput = `${stdout}\n${stderr}`;
+        const lines = combinedOutput.split('\n');
+        const textLines = lines
+          .map(l => l.replace(/\[\d{2}:\d{2}(:\d{2})?(\.\d{3})?\s*-->\s*\d{2}:\d{2}(:\d{2})?(\.\d{3})?\]\s*/g, '').trim())
+          .filter(l => {
+            if (!l || l.length === 0) return false;
+            if (l.startsWith('whisper_') || l.startsWith('system_info:') || l.startsWith('read_audio_data:')) return false;
+            if (l.startsWith('main:') || l.startsWith('load_backend:') || l.startsWith('output_txt:') || l.startsWith('ggml_')) return false;
+            if (l.startsWith('llama_') || l.startsWith('exec_') || l.startsWith('[STT]') || l.startsWith('[VOICE]')) return false;
+            return true;
+          });
+        transcript = textLines.join(' ').trim();
+        if (transcript) {
+          console.log(`[STT] Extracted transcript from process stdout/stderr fallback: "${transcript}"`);
+        }
+      }
+
+      console.log(`[STT] Offline Whisper final transcript output: "${transcript}"`);
       
       if (!transcript) {
-        console.warn('[STT] Whisper output was empty or silent audio.');
-        throw new Error('Speech transcription produced empty result. Please speak louder.');
+        console.warn('[STT] Whisper output was empty or silent audio. Raw stdout:', stdout, 'stderr:', stderr);
+        throw new Error('Speech transcription produced empty result. Please speak louder and clearly.');
       }
 
       return transcript;
@@ -207,7 +245,9 @@ export const whisperService = {
     } finally {
       try {
         if (fs.existsSync(tempWavPath)) fs.unlinkSync(tempWavPath);
-        if (fs.existsSync(tempTxtPath)) fs.unlinkSync(tempTxtPath);
+        for (const p of candidateTxtPaths) {
+          if (fs.existsSync(p)) fs.unlinkSync(p);
+        }
       } catch (e) {
         // Silently ignore cleanup errors
       }
