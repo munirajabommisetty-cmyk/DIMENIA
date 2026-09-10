@@ -326,6 +326,12 @@ export const commandExecutor = {
           } else if (cleanTarget.includes('day') || cleanTarget.includes('schedule')) {
             target = '/day';
             if (!responseText) responseText = vt.openingSchedule || 'Opening daily schedule.';
+          } else if (cleanTarget.includes('garden') || cleanTarget.includes('mind garden')) {
+            target = '/garden';
+            if (!responseText) responseText = 'Opening Mind Garden.';
+          } else if (cleanTarget.includes('health') || cleanTarget.includes('medical')) {
+            target = '/settings';
+            if (!responseText) responseText = 'Opening health information.';
           } else if (cleanTarget.includes('home') || cleanTarget === 'main' || cleanTarget === '/') {
             target = '/';
             if (!responseText) responseText = vt.goingHome || 'Going home.';

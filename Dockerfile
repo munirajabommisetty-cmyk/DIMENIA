@@ -15,21 +15,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /whisper-src
 RUN git clone -b v1.5.4 --single-branch https://github.com/ggerganov/whisper.cpp.git .
 
-# Build static whisper-cli (linking libwhisper statically so binary is self-contained)
-RUN cmake -B build-static -DBUILD_SHARED_LIBS=OFF -DWHISPER_BUILD_EXAMPLES=ON -DWHISPER_OPENMP=OFF && \
-    cmake --build build-static --config Release
+# Build whisper-cli (building shared + static so libwhisper.so is generated alongside whisper-cli)
+RUN cmake -B build -DBUILD_SHARED_LIBS=ON -DWHISPER_BUILD_EXAMPLES=ON -DWHISPER_OPENMP=OFF && \
+    cmake --build build --config Release
 
-# Gather compiled static executable into dist-bin
+# Gather compiled executable AND all shared libraries into dist-bin
 RUN mkdir -p /whisper-src/dist-bin && \
-    (cp -f /whisper-src/build-static/bin/whisper-cli /whisper-src/dist-bin/whisper-cli 2>/dev/null || \
-     cp -f /whisper-src/build-static/bin/main /whisper-src/dist-bin/whisper-cli 2>/dev/null || \
-     find /whisper-src/build-static -name "whisper-cli" -type f -exec cp -f {} /whisper-src/dist-bin/whisper-cli \; 2>/dev/null || \
-     find /whisper-src/build-static -name "main" -type f -exec cp -f {} /whisper-src/dist-bin/whisper-cli \; 2>/dev/null)
+    (cp -f /whisper-src/build/bin/whisper-cli /whisper-src/dist-bin/whisper-cli 2>/dev/null || \
+     cp -f /whisper-src/build/bin/main /whisper-src/dist-bin/whisper-cli 2>/dev/null || \
+     find /whisper-src/build -name "whisper-cli" -type f -exec cp -f {} /whisper-src/dist-bin/whisper-cli \; 2>/dev/null || \
+     find /whisper-src/build -name "main" -type f -exec cp -f {} /whisper-src/dist-bin/whisper-cli \; 2>/dev/null) && \
+    (find /whisper-src/build -name "*.so*" -type f -exec cp -a {} /whisper-src/dist-bin/ \; 2>/dev/null || true)
 
-# Verify static Linux executable inside builder
+# Verify executable inside builder with LD_LIBRARY_PATH pointing to dist-bin
 RUN chmod +x /whisper-src/dist-bin/whisper-cli && \
-    /whisper-src/dist-bin/whisper-cli --help > /dev/null && \
-    echo "[Docker Stage 1] Static whisper-cli binary compiled and verified successfully!"
+    LD_LIBRARY_PATH=/whisper-src/dist-bin:$LD_LIBRARY_PATH /whisper-src/dist-bin/whisper-cli --help > /dev/null && \
+    echo "[Docker Stage 1] whisper-cli binary and shared libraries compiled and verified successfully!"
 
 # ==============================================================================
 # STAGE 2: Node.js application builder (installs devDependencies for compilation)
@@ -53,8 +54,8 @@ RUN npm ci && npm ci --prefix backend
 # Copy full application source
 COPY . .
 
-# Copy compiled Linux static whisper binary from STAGE 1
-COPY --from=whisper-builder /whisper-src/dist-bin/whisper-cli /app/backend/models/whisper/whisper-cli
+# Copy compiled Linux whisper binary AND shared libraries from STAGE 1
+COPY --from=whisper-builder /whisper-src/dist-bin/ /app/backend/models/whisper/
 RUN chmod +x /app/backend/models/whisper/whisper-cli
 
 # Verify Git LFS ggml-tiny.bin model size inside builder
@@ -83,6 +84,7 @@ FROM node:20-slim AS runner
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=5000
+ENV LD_LIBRARY_PATH=/app/backend/models/whisper:/usr/local/lib:${LD_LIBRARY_PATH}
 
 WORKDIR /app
 
@@ -98,12 +100,16 @@ COPY --from=app-builder /app/dist ./dist
 COPY --from=app-builder /app/backend/dist ./backend/dist
 COPY --from=app-builder /app/backend/models ./backend/models
 
+# Copy shared libraries to /usr/local/lib and run ldconfig
+RUN (cp -a /app/backend/models/whisper/*.so* /usr/local/lib/ 2>/dev/null || true) && \
+    ldconfig 2>/dev/null || true
+
 # Ensure Linux whisper executable is executable
 RUN chmod +x /app/backend/models/whisper/whisper-cli
 
 # MANDATORY: Verify static whisper-cli execution in STAGE 3 runner
 RUN /app/backend/models/whisper/whisper-cli --help > /dev/null && \
-    echo "[Docker Stage 3 Runner] Static whisper-cli verified and executed successfully!"
+    echo "[Docker Stage 3 Runner] whisper-cli verified and executed successfully!"
 
 EXPOSE 5000
 
