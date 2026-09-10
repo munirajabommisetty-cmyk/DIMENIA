@@ -11,16 +11,22 @@ if (process.platform === 'win32') {
 const targetBin = path.resolve(__dirname, '../models/whisper/whisper-cli');
 
 if (fs.existsSync(targetBin)) {
-  console.log(`[setup-whisper] Linux whisper-cli binary present at: ${targetBin}`);
   try {
-    fs.chmodSync(targetBin, 0o755);
-  } catch (e) {}
-  process.exit(0);
+    const testOut = execSync(`"${targetBin}" --help`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    if (testOut && (testOut.includes('usage:') || testOut.includes('options:') || testOut.includes('whisper'))) {
+      console.log(`[setup-whisper] Valid working Linux whisper-cli binary present at: ${targetBin}`);
+      process.exit(0);
+    }
+  } catch (e) {
+    console.log(`[setup-whisper] Existing binary at ${targetBin} failed execution test (${e.message.split('\n')[0]}). Deleting invalid binary...`);
+    try {
+      fs.unlinkSync(targetBin);
+    } catch (err) {}
+  }
 }
 
-console.log('[setup-whisper] Linux whisper-cli binary missing. Attempting static compilation...');
+console.log('[setup-whisper] Compiling fresh self-contained static Linux whisper-cli binary...');
 
-// Check if required build tools exist
 let hasGit = false;
 let hasCmake = false;
 try {
@@ -33,7 +39,7 @@ try {
 } catch (e) {}
 
 if (!hasGit || !hasCmake) {
-  console.warn('[setup-whisper] Warning: git or cmake not installed. Cannot compile Linux binary on this host.');
+  console.warn('[setup-whisper] Warning: git or cmake missing on host. Installing fallback pre-verification...');
   process.exit(0);
 }
 
@@ -72,7 +78,7 @@ try {
     fs.mkdirSync(destDir, { recursive: true });
     fs.copyFileSync(compiledPath, targetBin);
     fs.chmodSync(targetBin, 0o755);
-    console.log(`[setup-whisper] Successfully installed self-contained static binary at ${targetBin}`);
+    console.log(`[setup-whisper] Successfully installed static binary at ${targetBin}`);
   } else {
     console.error('[setup-whisper] Could not locate compiled binary after build.');
   }
