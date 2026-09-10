@@ -191,28 +191,33 @@ export const whisperService = {
       if (process.platform === 'win32') {
         const res = await execFileAsync(exePath, args, {
           cwd: exeDir,
-          timeout: 25000,
-          env: {
-            ...process.env,
-            LD_LIBRARY_PATH: ldLibraryPath
-          }
+          timeout: 25000
         });
         stdout = res.stdout || '';
         stderr = res.stderr || '';
       } else {
-        const shellCmd = `LD_LIBRARY_PATH="${ldLibraryPath}" ${preloadPrefix}"${exePath}" ${args.join(' ')}`;
-        console.log(`[STT] Shell execution command: ${shellCmd}`);
-        const res = await execAsync(shellCmd, {
-          cwd: exeDir,
-          timeout: 25000,
-          env: {
-            ...process.env,
-            LD_LIBRARY_PATH: ldLibraryPath,
-            ...(ldPreloadPath ? { LD_PRELOAD: ldPreloadPath } : {})
-          }
-        });
-        stdout = res.stdout || '';
-        stderr = res.stderr || '';
+        try {
+          const res = await execFileAsync(exePath, args, {
+            cwd: exeDir,
+            timeout: 25000
+          });
+          stdout = res.stdout || '';
+          stderr = res.stderr || '';
+        } catch (execFileErr: any) {
+          console.warn(`[STT] execFile direct execution failed: ${execFileErr.message}. Attempting shell exec fallback...`);
+          const shellCmd = `LD_LIBRARY_PATH="${ldLibraryPath}" ${preloadPrefix}"${exePath}" ${args.join(' ')}`;
+          const res = await execAsync(shellCmd, {
+            cwd: exeDir,
+            timeout: 25000,
+            env: {
+              ...process.env,
+              LD_LIBRARY_PATH: ldLibraryPath,
+              ...(ldPreloadPath ? { LD_PRELOAD: ldPreloadPath } : {})
+            }
+          });
+          stdout = res.stdout || '';
+          stderr = res.stderr || '';
+        }
       }
 
       console.log(`[STT] Whisper stdout length: ${stdout.length}, stderr length: ${stderr.length}`);
