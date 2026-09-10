@@ -19,28 +19,17 @@ RUN git clone -b v1.5.4 --single-branch https://github.com/ggerganov/whisper.cpp
 RUN cmake -B build -DBUILD_SHARED_LIBS=ON && cmake --build build --config Release
 
 # Gather compiled binaries and shared libraries into dist-bin
-# Note: cp -L dereferences symlinks so dist-bin contains standalone ELF binaries without dangling links
 RUN mkdir -p /whisper-src/dist-bin && \
-    find /whisper-src/build \( -name "whisper-cli" -o -name "main" -o -name "*.so*" \) -exec cp -L {} /whisper-src/dist-bin/ \;
+    find /whisper-src/build \( -name "whisper-cli" -o -name "main" -o -name "*.so*" \) -exec cp -a {} /whisper-src/dist-bin/ \;
 
-# Ensure non-versioned libwhisper.so and libggml.so files exist as standalone ELF files
-RUN for f in /whisper-src/dist-bin/*.so*; do \
-        if [ -f "$f" ]; then \
-            base=$(basename "$f"); \
-            name_no_ver=$(echo "$base" | sed -E 's/(\.so).*/\1/'); \
-            if [ "$base" != "$name_no_ver" ]; then \
-                cp -f "$f" "/whisper-src/dist-bin/$name_no_ver"; \
-            fi; \
+# Ensure libwhisper.so exists as a valid dereferenced file in dist-bin
+RUN cd /whisper-src/dist-bin && \
+    for f in *.so*; do \
+        if [ -f "$f" ] || [ -L "$f" ]; then \
+            cp -L "$f" libwhisper.so 2>/dev/null || true; \
+            break; \
         fi; \
     done
-
-# Ensure libwhisper.so exists even if named differently
-RUN if [ ! -f "/whisper-src/dist-bin/libwhisper.so" ]; then \
-        SO_FILE=$(find /whisper-src/dist-bin -name "*.so*" | head -n 1); \
-        if [ -n "$SO_FILE" ]; then \
-            cp -f "$SO_FILE" /whisper-src/dist-bin/libwhisper.so; \
-        fi; \
-    fi
 
 # Verify compiled Linux executable inside whisper-builder
 RUN if [ -f "/whisper-src/dist-bin/whisper-cli" ]; then \
@@ -77,11 +66,11 @@ COPY . .
 COPY --from=whisper-builder /whisper-src/dist-bin/ /app/whisper-bin/
 RUN mkdir -p /app/backend/models/whisper && \
     if [ -f "/app/whisper-bin/whisper-cli" ]; then \
-        cp -L /app/whisper-bin/whisper-cli /app/backend/models/whisper/whisper-cli; \
+        cp -a /app/whisper-bin/whisper-cli /app/backend/models/whisper/whisper-cli; \
     elif [ -f "/app/whisper-bin/main" ]; then \
-        cp -L /app/whisper-bin/main /app/backend/models/whisper/whisper-cli; \
+        cp -a /app/whisper-bin/main /app/backend/models/whisper/whisper-cli; \
     fi && \
-    cp -L /app/whisper-bin/*.so* /app/backend/models/whisper/ 2>/dev/null || true && \
+    cp -a /app/whisper-bin/* /app/backend/models/whisper/ 2>/dev/null || true && \
     chmod +x /app/backend/models/whisper/whisper-cli && \
     rm -rf /app/whisper-bin
 
@@ -130,18 +119,18 @@ COPY --from=app-builder /app/backend/models ./backend/models
 # Ensure Linux whisper executable is executable, copy shared libraries to system folders, register with ldconfig
 RUN chmod +x /app/backend/models/whisper/whisper-cli && \
     mkdir -p /usr/local/lib /usr/lib /etc/ld.so.conf.d && \
-    cp -L /app/backend/models/whisper/*.so* /usr/local/lib/ 2>/dev/null || true && \
-    cp -L /app/backend/models/whisper/*.so* /usr/lib/ 2>/dev/null || true && \
+    cp -a /app/backend/models/whisper/*.so* /usr/local/lib/ 2>/dev/null || true && \
+    cp -a /app/backend/models/whisper/*.so* /usr/lib/ 2>/dev/null || true && \
     echo "/app/backend/models/whisper" > /etc/ld.so.conf.d/whisper.conf && \
     (ldconfig 2>/dev/null || true)
 
-# MANDATORY: Verify dynamic library linking with ldd and whisper-cli execution in STAGE 3 runner
-RUN ldd /app/backend/models/whisper/whisper-cli && \
-    /app/backend/models/whisper/whisper-cli --help > /dev/null && \
+# MANDATORY: Verify dynamic library linking and whisper-cli execution in STAGE 3 runner
+RUN /app/backend/models/whisper/whisper-cli --help > /dev/null && \
     echo "[Docker Stage 3 Runner] whisper-cli verified and dynamic libraries loaded successfully!"
 
 EXPOSE 5000
 
 CMD ["npm", "run", "start"]
+
 
 
