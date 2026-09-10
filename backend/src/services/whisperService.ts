@@ -170,6 +170,22 @@ export const whisperService = {
         process.env.LD_LIBRARY_PATH || ''
       ].filter(Boolean).join(':');
 
+      // Find any available .so file to preload if dynamic linking fails
+      let ldPreloadPath = '';
+      const preloadCandidates = [
+        path.join(exeDir, 'libwhisper.so'),
+        path.join(exeDir, 'libwhisper.so.1'),
+        '/usr/local/lib/libwhisper.so',
+        '/usr/lib/libwhisper.so'
+      ];
+      for (const cand of preloadCandidates) {
+        if (fs.existsSync(cand)) {
+          ldPreloadPath = cand;
+          break;
+        }
+      }
+      const preloadPrefix = ldPreloadPath ? `LD_PRELOAD="${ldPreloadPath}" ` : '';
+
       let stdout = '';
       let stderr = '';
       if (process.platform === 'win32') {
@@ -184,14 +200,15 @@ export const whisperService = {
         stdout = res.stdout || '';
         stderr = res.stderr || '';
       } else {
-        const shellCmd = `LD_LIBRARY_PATH="${ldLibraryPath}" "${exePath}" ${args.join(' ')}`;
+        const shellCmd = `LD_LIBRARY_PATH="${ldLibraryPath}" ${preloadPrefix}"${exePath}" ${args.join(' ')}`;
         console.log(`[STT] Shell execution command: ${shellCmd}`);
         const res = await execAsync(shellCmd, {
           cwd: exeDir,
           timeout: 25000,
           env: {
             ...process.env,
-            LD_LIBRARY_PATH: ldLibraryPath
+            LD_LIBRARY_PATH: ldLibraryPath,
+            ...(ldPreloadPath ? { LD_PRELOAD: ldPreloadPath } : {})
           }
         });
         stdout = res.stdout || '';
