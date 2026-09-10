@@ -488,6 +488,10 @@ export const commandExecutor = {
         actionType = 'navigate';
         target = '/day';
         break;
+      case 'REMINDER_QUERY':
+        actionType = 'navigate';
+        target = '/reminders';
+        break;
       case 'CALL_CAREGIVER':
         actionType = 'call';
         if (!responseText) responseText = vt.callingCaregiver || 'Calling your caregiver Anu.';

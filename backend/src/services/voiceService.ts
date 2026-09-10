@@ -30,6 +30,26 @@ export function patientAIQueryResolver(
   }
 
   // =========================================================================
+  // 0.5. MIND GARDEN & HEALTH INFORMATION NAVIGATIONS
+  // =========================================================================
+  if (matchesAny(['mind garden', 'garden'])) {
+    return {
+      intent: 'NAVIGATION',
+      path: '/garden',
+      target: '/garden',
+      response: 'Opening Mind Garden.'
+    };
+  }
+  if (matchesAny(['health information', 'health info', 'medical information', 'medical info'])) {
+    return {
+      intent: 'NAVIGATION',
+      path: '/settings',
+      target: '/settings',
+      response: 'Opening health information.'
+    };
+  }
+
+  // =========================================================================
   // 1. MOTIVATION & EMOTIONAL SUPPORT INTENT (MOTIVATION_SUPPORT)
   // =========================================================================
   const isMotivationReq = matchesAny([
@@ -83,19 +103,16 @@ export function patientAIQueryResolver(
     };
   }
 
-  // =========================================================================
-  // 2. COGNITIVE & MEMORY PERFORMANCE QUERIES
-  // =========================================================================
-  const isCognitivePerfQuery = (
-    (matchesAny(['memory', 'memories', 'yaad', 'स्मृति', 'মেমরি', 'brain training', 'brain game', 'brain games']) && matchesAny(['power', 'improving', 'improvement', 'better', 'changed', 'progress', 'score', 'previous', 'performance', 'trend', 'compared', 'games', 'game', 'kaise improve', 'behtar', 'उन्नति', 'উন্নতি', 'doing'])) ||
+  const isNavVerb = matchesAny(['go to', 'open', 'take me to']);
+  const isCognitivePerfQuery = !isNavVerb && (
+    (matchesAny(['memory', 'memories', 'yaad', 'स्मृति', 'মেমরি', 'brain training', 'brain game', 'brain games']) && matchesAny(['power', 'improving', 'improvement', 'better', 'changed', 'progress', 'score', 'previous', 'performance', 'trend', 'compared', 'kaise improve', 'behtar', 'उन्नति', 'উন্নতি', 'doing'])) ||
     matchesAny([
       'how is my memory power', 'memory power improving', 'is my memory getting better',
       'how has my memory performance changed', 'am i improving at memory games',
       'how was my memory performance compared', 'what is my memory score',
       'cognitive performance', 'how am i improving', 'overall cognitive score',
       'brain performance', 'my progress in games', 'how is my attention', 'attention score',
-      'brain training progress', 'how am i doing with brain training', 'what is my brain training progress',
-      'brain training'
+      'brain training progress', 'how am i doing with brain training', 'what is my brain training progress'
     ])
   );
 
