@@ -1,10 +1,11 @@
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { execFile } from 'child_process';
+import { execFile, exec } from 'child_process';
 import { promisify } from 'util';
 
 const execFileAsync = promisify(execFile);
+const execAsync = promisify(exec);
 
 export const whisperService = {
   getExecutablePath(): string | null {
@@ -155,14 +156,30 @@ export const whisperService = {
         process.env.LD_LIBRARY_PATH || ''
       ].filter(Boolean).join(':');
 
-      const { stdout } = await execFileAsync(exePath, args, {
-        cwd: exeDir,
-        timeout: 25000,
-        env: {
-          ...process.env,
-          LD_LIBRARY_PATH: ldLibraryPath
-        }
-      });
+      let stdout = '';
+      if (process.platform === 'win32') {
+        const res = await execFileAsync(exePath, args, {
+          cwd: exeDir,
+          timeout: 25000,
+          env: {
+            ...process.env,
+            LD_LIBRARY_PATH: ldLibraryPath
+          }
+        });
+        stdout = res.stdout;
+      } else {
+        const shellCmd = `LD_LIBRARY_PATH="${ldLibraryPath}" "${exePath}" ${args.join(' ')}`;
+        console.log(`[STT] Shell execution command: ${shellCmd}`);
+        const res = await execAsync(shellCmd, {
+          cwd: exeDir,
+          timeout: 25000,
+          env: {
+            ...process.env,
+            LD_LIBRARY_PATH: ldLibraryPath
+          }
+        });
+        stdout = res.stdout;
+      }
 
       let transcript = '';
       if (fs.existsSync(tempTxtPath)) {
