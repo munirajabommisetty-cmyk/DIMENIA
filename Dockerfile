@@ -1,5 +1,5 @@
 # ==============================================================================
-# STAGE 1: Build pinned whisper.cpp v1.5.4 native Linux binary with $ORIGIN RPATH
+# STAGE 1: Build pinned whisper.cpp v1.5.4 native Linux static binary
 # ==============================================================================
 FROM node:20-slim AS whisper-builder
 
@@ -15,40 +15,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /whisper-src
 RUN git clone -b v1.5.4 --single-branch https://github.com/ggerganov/whisper.cpp.git .
 
-# Build whisper-cli and libwhisper.so with $ORIGIN RPATH and WHISPER_OPENMP=OFF
-RUN cmake -B build \
-    -DBUILD_SHARED_LIBS=ON \
-    -DWHISPER_BUILD_EXAMPLES=ON \
-    -DWHISPER_OPENMP=OFF \
-    -DCMAKE_INSTALL_RPATH='$ORIGIN' \
-    -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
-    -DCMAKE_EXE_LINKER_FLAGS="-Wl,-rpath,'\$$ORIGIN'" && \
-    cmake --build build --config Release
+# Build static whisper-cli (linking libwhisper statically so binary is self-contained)
+RUN cmake -B build-static -DBUILD_SHARED_LIBS=OFF -DWHISPER_BUILD_EXAMPLES=ON -DWHISPER_OPENMP=OFF && \
+    cmake --build build-static --config Release
 
-# Gather compiled binary and shared libraries into dist-bin
+# Gather compiled static executable into dist-bin
 RUN mkdir -p /whisper-src/dist-bin && \
-    (cp -f /whisper-src/build/bin/whisper-cli /whisper-src/dist-bin/whisper-cli 2>/dev/null || \
-     cp -f /whisper-src/build/bin/main /whisper-src/dist-bin/whisper-cli 2>/dev/null || \
-     find /whisper-src/build -name "whisper-cli" -type f -exec cp -f {} /whisper-src/dist-bin/whisper-cli \; 2>/dev/null || \
-     find /whisper-src/build -name "main" -type f -exec cp -f {} /whisper-src/dist-bin/whisper-cli \; 2>/dev/null) && \
-    find /whisper-src/build -name "*.so*" -exec cp -L {} /whisper-src/dist-bin/ \; 2>/dev/null || true
+    (cp -f /whisper-src/build-static/bin/whisper-cli /whisper-src/dist-bin/whisper-cli 2>/dev/null || \
+     cp -f /whisper-src/build-static/bin/main /whisper-src/dist-bin/whisper-cli 2>/dev/null || \
+     find /whisper-src/build-static -name "whisper-cli" -type f -exec cp -f {} /whisper-src/dist-bin/whisper-cli \; 2>/dev/null || \
+     find /whisper-src/build-static -name "main" -type f -exec cp -f {} /whisper-src/dist-bin/whisper-cli \; 2>/dev/null)
 
-# Ensure libwhisper.so, libwhisper.so.1, libwhisper.so.1.5.4 copies all exist in dist-bin
-RUN cd /whisper-src/dist-bin && \
-    for f in *.so*; do \
-        if [ -f "$f" ]; then \
-            cp -f "$f" libwhisper.so 2>/dev/null || true; \
-            cp -f "$f" libwhisper.so.1 2>/dev/null || true; \
-            cp -f "$f" libwhisper.so.1.5.4 2>/dev/null || true; \
-            break; \
-        fi; \
-    done
-
-# Verify compiled Linux binary inside builder
+# Verify static Linux executable inside builder
 RUN chmod +x /whisper-src/dist-bin/whisper-cli && \
-    cd /whisper-src/dist-bin && \
-    ./whisper-cli --help > /dev/null && \
-    echo "[Docker Stage 1] whisper-cli with \$ORIGIN RPATH verified successfully!"
+    /whisper-src/dist-bin/whisper-cli --help > /dev/null && \
+    echo "[Docker Stage 1] Static whisper-cli binary compiled and verified successfully!"
 
 # ==============================================================================
 # STAGE 2: Node.js application builder (installs devDependencies for compilation)
@@ -72,8 +53,8 @@ RUN npm ci && npm ci --prefix backend
 # Copy full application source
 COPY . .
 
-# Copy compiled Linux whisper binary and shared libraries from STAGE 1
-COPY --from=whisper-builder /whisper-src/dist-bin/ /app/backend/models/whisper/
+# Copy compiled Linux static whisper binary from STAGE 1
+COPY --from=whisper-builder /whisper-src/dist-bin/whisper-cli /app/backend/models/whisper/whisper-cli
 RUN chmod +x /app/backend/models/whisper/whisper-cli
 
 # Verify Git LFS ggml-tiny.bin model size inside builder
@@ -91,7 +72,7 @@ RUN MODEL_PATH="/app/backend/models/whisper/ggml-tiny.bin" && \
         curl -L -o "$MODEL_PATH" "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin"; \
     fi
 
-# Build React frontend & Express backend
+# Build React frontend & Express backend (tsc and vite are available!)
 RUN npm run build
 
 # ==============================================================================
@@ -102,7 +83,6 @@ FROM node:20-slim AS runner
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=5000
-ENV LD_LIBRARY_PATH="/app/backend/models/whisper:/usr/local/lib:/usr/lib:${LD_LIBRARY_PATH}"
 
 WORKDIR /app
 
@@ -118,17 +98,12 @@ COPY --from=app-builder /app/dist ./dist
 COPY --from=app-builder /app/backend/dist ./backend/dist
 COPY --from=app-builder /app/backend/models ./backend/models
 
-# Ensure Linux whisper executable is executable, copy shared libraries to system folders, register with ldconfig
-RUN chmod +x /app/backend/models/whisper/whisper-cli && \
-    mkdir -p /usr/local/lib /usr/lib && \
-    cp -L /app/backend/models/whisper/*.so* /usr/local/lib/ 2>/dev/null || true && \
-    cp -L /app/backend/models/whisper/*.so* /usr/lib/ 2>/dev/null || true && \
-    (ldconfig 2>/dev/null || true)
+# Ensure Linux whisper executable is executable
+RUN chmod +x /app/backend/models/whisper/whisper-cli
 
-# MANDATORY: Verify whisper-cli execution in STAGE 3 runner
-RUN cd /app/backend/models/whisper && \
-    ./whisper-cli --help > /dev/null && \
-    echo "[Docker Stage 3 Runner] whisper-cli with \$ORIGIN RPATH verified and executed successfully!"
+# MANDATORY: Verify static whisper-cli execution in STAGE 3 runner
+RUN /app/backend/models/whisper/whisper-cli --help > /dev/null && \
+    echo "[Docker Stage 3 Runner] Static whisper-cli verified and executed successfully!"
 
 EXPOSE 5000
 
