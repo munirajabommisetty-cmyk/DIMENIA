@@ -18,18 +18,20 @@ RUN git clone -b v1.5.4 --single-branch https://github.com/ggerganov/whisper.cpp
 # Build whisper-cli / main binary with shared library enabled
 RUN cmake -B build -DBUILD_SHARED_LIBS=ON && cmake --build build --config Release
 
-# Gather compiled binaries and shared libraries into dist-bin
+# Gather compiled binaries and shared libraries into dist-bin using dereferencing cp -L
 RUN mkdir -p /whisper-src/dist-bin && \
-    find /whisper-src/build \( -name "whisper-cli" -o -name "main" -o -name "*.so*" \) -exec cp -a {} /whisper-src/dist-bin/ \;
+    find /whisper-src/build \( -name "whisper-cli" -o -name "main" -o -name "*.so*" \) -exec cp -L {} /whisper-src/dist-bin/ \;
 
-# Ensure libwhisper.so exists as a valid dereferenced file in dist-bin
+# Ensure libwhisper.so exists as a valid standalone ELF file in dist-bin
 RUN cd /whisper-src/dist-bin && \
-    for f in *.so*; do \
-        if [ -f "$f" ] || [ -L "$f" ]; then \
-            cp -L "$f" libwhisper.so 2>/dev/null || true; \
-            break; \
-        fi; \
-    done
+    if [ ! -f "libwhisper.so" ]; then \
+        for f in *.so*; do \
+            if [ -f "$f" ]; then \
+                cp -f "$f" libwhisper.so 2>/dev/null || true; \
+                break; \
+            fi; \
+        done; \
+    fi
 
 # Verify compiled Linux executable inside whisper-builder
 RUN if [ -f "/whisper-src/dist-bin/whisper-cli" ]; then \
@@ -66,11 +68,11 @@ COPY . .
 COPY --from=whisper-builder /whisper-src/dist-bin/ /app/whisper-bin/
 RUN mkdir -p /app/backend/models/whisper && \
     if [ -f "/app/whisper-bin/whisper-cli" ]; then \
-        cp -a /app/whisper-bin/whisper-cli /app/backend/models/whisper/whisper-cli; \
+        cp -L /app/whisper-bin/whisper-cli /app/backend/models/whisper/whisper-cli; \
     elif [ -f "/app/whisper-bin/main" ]; then \
-        cp -a /app/whisper-bin/main /app/backend/models/whisper/whisper-cli; \
+        cp -L /app/whisper-bin/main /app/backend/models/whisper/whisper-cli; \
     fi && \
-    cp -a /app/whisper-bin/* /app/backend/models/whisper/ 2>/dev/null || true && \
+    cp -L /app/whisper-bin/* /app/backend/models/whisper/ 2>/dev/null || true && \
     chmod +x /app/backend/models/whisper/whisper-cli && \
     rm -rf /app/whisper-bin
 
@@ -119,8 +121,8 @@ COPY --from=app-builder /app/backend/models ./backend/models
 # Ensure Linux whisper executable is executable, copy shared libraries to system folders, register with ldconfig
 RUN chmod +x /app/backend/models/whisper/whisper-cli && \
     mkdir -p /usr/local/lib /usr/lib /etc/ld.so.conf.d && \
-    cp -a /app/backend/models/whisper/*.so* /usr/local/lib/ 2>/dev/null || true && \
-    cp -a /app/backend/models/whisper/*.so* /usr/lib/ 2>/dev/null || true && \
+    cp -L /app/backend/models/whisper/*.so* /usr/local/lib/ 2>/dev/null || true && \
+    cp -L /app/backend/models/whisper/*.so* /usr/lib/ 2>/dev/null || true && \
     echo "/app/backend/models/whisper" > /etc/ld.so.conf.d/whisper.conf && \
     (ldconfig 2>/dev/null || true)
 
