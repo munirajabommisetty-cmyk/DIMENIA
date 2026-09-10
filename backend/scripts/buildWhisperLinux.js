@@ -11,21 +11,14 @@ if (process.platform === 'win32') {
 const targetBin = path.resolve(__dirname, '../models/whisper/whisper-cli');
 
 if (fs.existsSync(targetBin)) {
+  console.log(`[setup-whisper] Preserving existing Linux whisper-cli binary at: ${targetBin}`);
   try {
-    const testOut = execSync(`"${targetBin}" --help`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-    if (testOut && (testOut.includes('usage:') || testOut.includes('options:') || testOut.includes('whisper'))) {
-      console.log(`[setup-whisper] Valid working Linux whisper-cli binary present at: ${targetBin}`);
-      process.exit(0);
-    }
-  } catch (e) {
-    console.log(`[setup-whisper] Existing binary at ${targetBin} failed execution test (${e.message.split('\n')[0]}). Deleting invalid binary...`);
-    try {
-      fs.unlinkSync(targetBin);
-    } catch (err) {}
-  }
+    fs.chmodSync(targetBin, 0o755);
+  } catch (e) {}
+  process.exit(0);
 }
 
-console.log('[setup-whisper] Compiling fresh self-contained static Linux whisper-cli binary...');
+console.log('[setup-whisper] Linux whisper-cli binary missing. Attempting static compilation...');
 
 let hasGit = false;
 let hasCmake = false;
@@ -39,7 +32,7 @@ try {
 } catch (e) {}
 
 if (!hasGit || !hasCmake) {
-  console.warn('[setup-whisper] Warning: git or cmake missing on host. Installing fallback pre-verification...');
+  console.warn('[setup-whisper] Warning: git or cmake missing on host. Skipping compilation.');
   process.exit(0);
 }
 
@@ -66,21 +59,12 @@ try {
     }
   }
 
-  if (!compiledPath) {
-    try {
-      const findRes = execSync(`find "${tmpDir}/build-static" -name "main" -o -name "whisper-cli"`, { encoding: 'utf8' });
-      compiledPath = findRes.trim().split('\n')[0];
-    } catch (e) {}
-  }
-
   if (compiledPath && fs.existsSync(compiledPath)) {
     const destDir = path.dirname(targetBin);
     fs.mkdirSync(destDir, { recursive: true });
     fs.copyFileSync(compiledPath, targetBin);
     fs.chmodSync(targetBin, 0o755);
     console.log(`[setup-whisper] Successfully installed static binary at ${targetBin}`);
-  } else {
-    console.error('[setup-whisper] Could not locate compiled binary after build.');
   }
 } catch (err) {
   console.error('[setup-whisper] Linux Whisper build failed:', err.message);
